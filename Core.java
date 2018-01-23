@@ -5,7 +5,29 @@ import ascii.Map;
 
 public class Core {
 	protected Scanner scn;
-
+	public static String[] tagList = {
+			"animal",
+			"plant",
+			"hard",
+			"fast",
+			"slow",
+			"soft",
+			"shell",
+			"fur",
+			"scale",
+			"hide",
+			"tough",
+			"one",
+			"two",
+			"three",
+			"four",
+			"five",
+			"six",
+			"seven",
+			"eight",
+			"nine",
+			"zero",
+	};
 	public Core() {
 		scn = new Scanner(System.in);
 	}
