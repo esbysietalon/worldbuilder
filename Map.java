@@ -5,15 +5,8 @@ public class Map {
 	private char[] baseMap = new char[25 * 25];
 	private char[] trueMap = new char[25 * 25];
 
-	private Thing[] organics;
 	private int playerX = 12;
 	private int playerY = 12;
-	private int sandCount = 0;
-	private int clayCount = 0;
-	private int rockCount = 0;
-	private int soilCount = 0;
-	private double humidity = 1.0;
-	private double temperature = 1.0;
 	private Player player;
 	private static int[] hash = { 722, 719, 326, 682, 439, 52, 895, 650, 206, 766, 664, 734, 940, 801, 507, 381, 711,
 			213, 481, 855, 628, 71, 768, 25, 806, 78, 11, 420, 72, 385, 653, 590, 509, 140, 937, 15, 919, 314, 574, 24,
@@ -70,37 +63,239 @@ public class Map {
 	private static double seedVal2 = 0;
 	private static double seedVal3 = 0;
 	private static double seedVal4 = 0;
+	private static int worldSize = 0;
 
-	public int ecoGetHeight() {
-		int max = 0;
-		
-		return max;
+	public static String[] matTraitsTL = { "roug", "stic", "shin", "toxi", "bnce", "elas", "brit", "tran", "heat",
+			"nrgy" };
+
+	public static String[] anatomyTL = { "exos", "endo", "eyes", "furr", "scal", "leaf", "hand", "foot", "claw", "mout",
+			"head", "tail", "tent", "japp", "horn", "gill", "tetl", "tetn", "pois" };
+	public static String[] specialTL = { "proj", "spin", "spit", "acid", "stic", "pois" };
+	public static String[] anatomyPTL = { "vine", "leaf", "thor", "bark", "bran", "spin", "gill", "capp", "frui",
+			"flwr", "aloe", "stem", "move" };
+
+	public static String[] habitatTL = { "mtan", "arct", "tund", "dsrt", "trop", "sava", "lake", "rivr", "ocea", "deep",
+			"shal" };
+	public static String[] behaviorTL = { "pkht", "usoc", "noma", "lone", "nbld", "faml", "ambu", "deco", "danc",
+			"sing", "terr", "farm" }; // behavioural
+
+	// traits
+	public static String[] mindTL = { "reas", "tool", "algn", "pers", "tele", "psio" }; // arranged from least int req
+	// to most int req, this
+	// tagList holds all tags
+	// that require significant
+	// intelligence to have
+
+	public static String[] featsTL = { "bers", "resi", "pigh", "mite" }; // arranged from least str req to most str req,
+																			// this tagList holds all tags
+	// that require significant strength to have
+	public static String[] phaseTL = { "rflx" }; // arranged from least spd req to most spd req, this tagList holds all
+													// tags
+	// that require significant speed to have
+	public static String[] qualitModTL = { "very", "nott", "nmod" };
+	public static String[] reactionTL = { "heat", "lite", "nrgy", "touc" };
+
+	public static Thing[] animalTL = new Thing[0];
+	public static Thing[] materialTL = new Thing[0];
+	public static Thing[] biomeSect = new Thing[9];
+
+	public Thing[] animalPop = new Thing[0];
+	public Thing[] plantPop = new Thing[0];
+
+	public static int currBiome = -1;
+
+	public static String generateNumberTag(int num) {
+		String output = (new Integer(num)).toString();
+		while (output.length() < 4) {
+			output = "0" + output;
+		}
+		return output;
 	}
 
-	public static double generateRandomRuntimeHash() {
-		// i don't even know what's going on with this function at this point
-		// use the updated version
-		counter += (int) (seedVal1 + seedVal2 + seedVal3 + seedVal4);
-		if (counter % 2 == 0)
-			counter += (int) (seedVal1 + seedVal3);
-		else if (counter % 2 == 1)
-			counter += (int) (seedVal2 + seedVal4);
+	public static String generateQualityModTag() {
+		String output = "";
+		output += qualitModTL[(int) (generateRandomRuntime() * qualitModTL.length)];
+		return output;
+	}
 
-		return (double) (hash[(int) Math
-				.abs(((hash[((int) Math.abs(hash[(int) (Math.abs(counter + seedVal1) % hash.length)] + seedVal2))
-						% hash.length]
-						+ Math.abs((int) Math.abs(seedVal1 * (counter + (seedVal2 + seedVal4))))
-						+ Math.abs(hash[(int) Math.abs(Math
-								.abs((hash[(int) Math.abs((counter + (seedVal2 + seedVal4) + seedVal3) % hash.length)]
-										+ (int) seedVal4))
-								% hash.length)] + (long) Math.abs(seedVal2 * counter))))
-						% hash.length)]
-				* hash[(int) Math.abs(((hash[(hash[(int) Math.abs((counter + seedVal2) % hash.length)] + (int) seedVal3)
-						% hash.length] + (int) Math.abs(seedVal4 * (counter + (seedVal1 + seedVal2))))
-						+ (hash[(hash[(int) Math.abs((counter + (seedVal3 + seedVal4) + seedVal1) % hash.length)]
-								+ (int) seedVal2) % hash.length] + (long) Math.abs(seedVal3 * counter)))
-						% hash.length)])
-				/ (double) ((hash.length - 1 + 0.0001) * (hash.length - 1 + 0.0001));
+	public static String generateReactionTag() {
+		String output = "";
+		output += reactionTL[(int) (generateRandomRuntime() * reactionTL.length)];
+		return output;
+	}
+
+	public static void generateMaterials() {
+		int primaryLength = (int) (generateRandomRuntime() * 50) + 10;
+		int secondaryLength = (int) (generateRandomRuntime() * 25) + 10;
+		int tertiaryLength = (int) (generateRandomRuntime() * 12) + 10;
+		materialTL = new Thing[primaryLength + secondaryLength + tertiaryLength];
+		for (int i = 0; i < primaryLength; i++) {
+			materialTL[i] = new Thing();
+			materialTL[i].addTag("visc_" + generateQualityModTag());
+			materialTL[i].addTag("heav_" + generateQualityModTag());
+			materialTL[i].addTag("hard_" + generateQualityModTag());
+			materialTL[i].addTag("orga_" + generateQualityModTag());
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_prim");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_seco");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_tert");
+		}
+		for (int i = primaryLength; i < primaryLength + secondaryLength; i++) {
+			materialTL[i] = new Thing();
+			materialTL[i].addTag("visc_" + generateQualityModTag());
+			materialTL[i].addTag("heav_" + generateQualityModTag());
+			materialTL[i].addTag("hard_" + generateQualityModTag());
+			materialTL[i].addTag("orga_" + generateQualityModTag());
+			String parent1 = generateNumberTag((int) (generateRandomRuntime() * (primaryLength)));
+			String parent2 = generateNumberTag((int) (generateRandomRuntime() * (primaryLength)));
+
+			materialTL[i].addTag("prnt_"+parent1);
+			materialTL[i].addTag("prnt_"+parent2);
+			materialTL[i].addTag("reac_" + generateReactionTag());
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_prim");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_seco");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_tert");
+		}
+		for (int i = primaryLength + secondaryLength; i < primaryLength + secondaryLength + tertiaryLength; i++) {
+			materialTL[i] = new Thing();
+			materialTL[i].addTag("visc_" + generateQualityModTag());
+			materialTL[i].addTag("heav_" + generateQualityModTag());
+			materialTL[i].addTag("hard_" + generateQualityModTag());
+			materialTL[i].addTag("orga_" + generateQualityModTag());
+			String parent1 = generateNumberTag((int) (generateRandomRuntime() * (primaryLength + secondaryLength)));
+			String parent2 = generateNumberTag((int) (generateRandomRuntime() * (primaryLength + secondaryLength)));
+
+			materialTL[i].addTag("prnt_"+parent1);
+			materialTL[i].addTag("prnt_"+parent2);
+			materialTL[i].addTag("reac_" + generateReactionTag());
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_prim");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_seco");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_tert");
+		}
+		for (int i = 0; i < materialTL.length; i++) {
+			materialTL[i].printTags();
+		}
+	}
+
+	public static void populateOrganisms() {
+
+	}
+
+	public static void generateBiomes() {
+		for (int i = 0; i < biomeSect.length; i++) {
+			biomeSect[i] = new Thing();
+			biomeSect[i].addTag(habitatTL[(int) (generateRandomRuntime() * habitatTL.length)]);
+		}
+		for (int i = 0; i < biomeSect.length; i++) {
+			biomeSect[i].printTags();
+		}
+		currBiome = (int) (generateRandomRuntime() * worldSize);
+		System.out.println();
+		System.out.println("current biome is ");
+		biomeSect[currBiome].printTags();
+		System.out.println();
+	}
+
+	public static void generateOrganisms() {
+		
+		animalTL = new Thing[(int) (generateRandomRuntime() * 50 + 10)];
+		
+		for (int i = 0; i < animalTL.length; i++) {
+			
+			int organicMat = (int) (generateRandomRuntime() * materialTL.length);
+			
+			while (!materialTL[organicMat].containsTag("orga_nmod")) {
+				organicMat = (int) (generateRandomRuntime() * materialTL.length);
+			}
+			String skinMaterial = generateNumberTag(organicMat);
+			
+			organicMat = (int) (generateRandomRuntime() * materialTL.length);
+			while (!materialTL[organicMat].containsTag("orga_nmod")) {
+				organicMat = (int) (generateRandomRuntime() * materialTL.length);
+			}
+			String skelMaterial = generateNumberTag(organicMat);
+			
+			organicMat = (int) (generateRandomRuntime() * materialTL.length);
+			while (!materialTL[organicMat].containsTag("orga_nmod")) {
+				organicMat = (int) (generateRandomRuntime() * materialTL.length);
+			}
+			String flshMaterial = generateNumberTag(organicMat);
+
+			animalTL[i] = new Thing();
+			animalTL[i].addTag("skin_" + skinMaterial);
+			animalTL[i].addTag("skel_" + skelMaterial);
+			animalTL[i].addTag("flsh_" + flshMaterial);
+
+			animalTL[i].addTag("habi_" + generateNumberTag((int) (generateRandomRuntime() * biomeSect.length)));
+			animalTL[i].addTag("strm_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
+			animalTL[i].addTag("intm_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
+			animalTL[i].addTag("spdm_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
+			int complexity = 5 + (int) (generateRandomRuntime() * 30);
+			animalTL[i].addTag("cplx_" + generateNumberTag(complexity));
+			
+			if (generateRandomRuntime() > 0.5) {
+				animalTL[i].addTag("anim");
+				int sizeNum = (int) (generateRandomRuntime() * 5) + 1;
+				animalTL[i].addTag("size_" + generateNumberTag(sizeNum));
+				animalTL[i].addTag("ecol_" + generateNumberTag((int) (generateRandomRuntime() * 4)));
+				animalTL[i].addTag("stam_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
+				// need to contextualize - placement - shape - symmetry
+				System.out.println("for loop 1 ");
+				for (int j = 0; j < complexity; j++) {
+					int anatomyNum = ((int) (generateRandomRuntime() * (10 * 15.0 / (complexity + sizeNum))) + 1);
+
+					String prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
+			
+					while ((prereqCheck.equals("hand") || prereqCheck.equals("foot"))
+							&& !(animalTL[i].containsTag("japp") || animalTL[i].containsTag("tent"))) {
+						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
+					}
+			
+					while (prereqCheck.equals("claw")
+							&& !(animalTL[i].containsTag("hand") || animalTL[i].containsTag("foot"))) {
+						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
+					}
+			
+					while ((prereqCheck.equals("tetn") || prereqCheck.equals("tetl"))
+							&& !animalTL[i].containsTag("mout")) {
+						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
+					}
+
+					if (!prereqCheck.equals("claw") && !prereqCheck.equals("tetl") && !prereqCheck.equals("tetn")
+							&& anatomyNum % 2 == 1) {
+						anatomyNum++;
+					}
+					prereqCheck += "_" + generateQualityModTag() + "_"
+							+ specialTL[(int) (generateRandomRuntime() * specialTL.length)];
+					animalTL[i].addTag(prereqCheck + "_" + generateNumberTag(anatomyNum));
+				}
+			} else {
+				animalTL[i].addTag("plnt");
+				int sizeNum = (int) (generateRandomRuntime() * 15) + 1;
+				animalTL[i].addTag("size_" + generateNumberTag(sizeNum));
+				animalTL[i].addTag("ecol_" + generateNumberTag(((int) (generateRandomRuntime() * 11)) / 9));
+			
+				// need to contextualize - placement - shape - symmetry - prerequisite(?)
+				for (int j = 0; j < complexity; j++) {
+					String prereqCheck = generateQualityModTag() + "_"
+							+ anatomyPTL[(int) (generateRandomRuntime() * anatomyPTL.length)];
+					prereqCheck += "_" + generateQualityModTag() + "_" + specialTL[(int) (generateRandomRuntime() * specialTL.length)];
+					animalTL[i].addTag(prereqCheck);
+				}
+			}
+		}
+		
+		for (int i = 0; i < animalTL.length; i++) {
+			animalTL[i].printTags();
+		}
+		
+	}
+
+	public static int max(int a, int b) {
+		return (a > b) ? a : b;
+	}
+
+	public static int min(int a, int b) {
+		return (a < b) ? a : b;
 	}
 
 	public static double generateRandomRuntime() {
@@ -110,13 +305,6 @@ public class Map {
 		result = (1000 * cc / (Math.pow(1 + cc, 8))) % 1.0;
 		cc = result;
 		return result;
-	}
-
-	public int factorial(int num) {
-		if (num <= 1)
-			return 1;
-		else
-			return num * factorial(num - 1);
 	}
 
 	public int findInLookup(char a) {
@@ -143,6 +331,7 @@ public class Map {
 	}
 
 	public Map(String seed) {
+
 		if (seed.length() > 32)
 			seed = seed.substring(0, 32);
 		player = new Player();
@@ -190,12 +379,19 @@ public class Map {
 		seedVal4 = (double) hash[hash[hash[hash[hash[(int) seedVal4 % hash.length]]]]];
 		cc = (seedVal1 + seedVal2 + seedVal3 + seedVal4);
 		System.out.println(seedVal1 + "  " + seedVal2 + " " + seedVal3 + " " + seedVal4);
-		System.out.print("actual seed value: ");
+		System.out.print("byproduct: ");
 		System.out.println(seedArr);
+
 		System.out.print(seed.toCharArray());
 		System.out.println(": ");
 		double tMin = Integer.MAX_VALUE;
 		double tMax = Integer.MIN_VALUE;
+
+	
+		for (int i = 0; i < 100; i++) {
+			generateRandomRuntime();
+		}
+
 		for (int i = 0; i < 25 * 25; i++) {
 			table[i] = (double) Map.generateRandomRuntime();
 			if (tMin > table[i])
@@ -207,9 +403,15 @@ public class Map {
 			table[i] -= tMin;
 			table[i] /= (tMax - tMin);
 		}
+		
+		worldSize = (int) (generateRandomRuntime() * 100) + 1;
+		biomeSect = new Thing[worldSize];
 		setBaseMap();
 		setTrueMap();
-		adjustGoals();
+		generateMaterials();
+		generateBiomes();
+		System.out.println("world size of " + worldSize);
+		generateOrganisms();
 	}
 
 	public int intClamp(int num, int min, int max) {
@@ -224,34 +426,33 @@ public class Map {
 		for (int i = 0; i < 25 * 25; i++) {
 			trueMap[i] = baseMap[i];
 		}
-		
+
 		trueMap[getPlayerPosition()] = '@';
+		
 	}
 
-	
 	public Player isPlayer(int position) {
 		if (position == getPlayerPosition())
 			return player;
 		return null;
 	}
 
-
 	public void checkStatus() {
-		
+
 	}
 
 	public void adjustGoals() {
-		
+
 	}
 
 	public void moveAnimals() {
-		
+
 	}
 
 	private boolean checkOccupied(int index) {
 		if (getPlayerPosition() == index)
 			return true;
-		
+
 		return false;
 	}
 
@@ -313,25 +514,18 @@ public class Map {
 		}
 	}
 
-
-
-	
-
 	public char getGraphics(int index) {
 		double value = table[index];
+
 		if (getRock(value)) {
-			rockCount++;
 			return 'n';
 		}
 		if (getSand(value)) {
-			sandCount++;
 			return '.';
 		}
 		if (getSoil(value)) {
-			soilCount++;
 			return '_';
 		}
-		clayCount++;
 		return '=';
 
 	}
@@ -341,45 +535,6 @@ public class Map {
 			return 0.0;
 		}
 		return num;
-	}
-
-	public void populatePlants() {
-		int bookmark = 0;
-
-		for (int i = 0; i < 4; i++) {
-			int count = 0;
-			char surface = ' ';
-
-			switch (i) {
-			case 0:
-				count = rockCount;
-				surface = 'n';
-				break;
-			case 1:
-				count = sandCount;
-				surface = '.';
-				break;
-			case 2:
-				count = soilCount;
-				surface = '_';
-				break;
-			case 3:
-				count = clayCount;
-				surface = '=';
-				break;
-			}
-
-			
-
-		}
-	}
-
-	public void populateAnimals() {
-		// herbivore pass
-		
-		// carnivore pass
-		// omnivore pass
-		// if biomass can sustain more, omnivore pass
 	}
 
 	public int getPlayerPosition() {
@@ -397,19 +552,9 @@ public class Map {
 		return output;
 	}
 
-	
-
-	public Thing[] getOrganisms() {
+	public char[] getTrueMap() {
 		// TODO Auto-generated method stub
-		return organics;
+		return trueMap;
 	}
 
-	public double getHumidity() {
-		return humidity;
-	}
-
-	public double getTemperature() {
-		// TODO Auto-generated method stub
-		return temperature;
-	}
 }
