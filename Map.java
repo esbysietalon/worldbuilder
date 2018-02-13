@@ -69,7 +69,7 @@ public class Map {
 			"nrgy" };
 
 	public static String[] anatomyTL = { "exos", "endo", "eyes", "furr", "scal", "leaf", "hand", "foot", "claw", "mout",
-			"head", "tail", "tent", "japp", "horn", "gill", "tetl", "tetn", "pois" };
+			"head", "tail", "tent", "japp", "horn", "gill", "tetl", "tetn", "ears" };
 	public static String[] specialTL = { "proj", "spin", "spit", "acid", "stic", "pois" };
 	public static String[] anatomyPTL = { "vine", "leaf", "thor", "bark", "bran", "spin", "gill", "capp", "frui",
 			"flwr", "aloe", "stem", "move" };
@@ -135,9 +135,12 @@ public class Map {
 			materialTL[i].addTag("heav_" + generateQualityModTag());
 			materialTL[i].addTag("hard_" + generateQualityModTag());
 			materialTL[i].addTag("orga_" + generateQualityModTag());
-			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_prim");
-			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_seco");
-			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_tert");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_"
+					+ generateQualityModTag() + "_prim");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_"
+					+ generateQualityModTag() + "_seco");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_"
+					+ generateQualityModTag() + "_tert");
 		}
 		for (int i = primaryLength; i < primaryLength + secondaryLength; i++) {
 			materialTL[i] = new Thing();
@@ -148,12 +151,15 @@ public class Map {
 			String parent1 = generateNumberTag((int) (generateRandomRuntime() * (primaryLength)));
 			String parent2 = generateNumberTag((int) (generateRandomRuntime() * (primaryLength)));
 
-			materialTL[i].addTag("prnt_"+parent1);
-			materialTL[i].addTag("prnt_"+parent2);
+			materialTL[i].addTag("prnt_" + parent1);
+			materialTL[i].addTag("prnt_" + parent2);
 			materialTL[i].addTag("reac_" + generateReactionTag());
-			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_prim");
-			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_seco");
-			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_tert");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_"
+					+ generateQualityModTag() + "_prim");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_"
+					+ generateQualityModTag() + "_seco");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_"
+					+ generateQualityModTag() + "_tert");
 		}
 		for (int i = primaryLength + secondaryLength; i < primaryLength + secondaryLength + tertiaryLength; i++) {
 			materialTL[i] = new Thing();
@@ -164,12 +170,15 @@ public class Map {
 			String parent1 = generateNumberTag((int) (generateRandomRuntime() * (primaryLength + secondaryLength)));
 			String parent2 = generateNumberTag((int) (generateRandomRuntime() * (primaryLength + secondaryLength)));
 
-			materialTL[i].addTag("prnt_"+parent1);
-			materialTL[i].addTag("prnt_"+parent2);
+			materialTL[i].addTag("prnt_" + parent1);
+			materialTL[i].addTag("prnt_" + parent2);
 			materialTL[i].addTag("reac_" + generateReactionTag());
-			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_prim");
-			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_seco");
-			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_" + generateQualityModTag() + "_tert");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_"
+					+ generateQualityModTag() + "_prim");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_"
+					+ generateQualityModTag() + "_seco");
+			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_"
+					+ generateQualityModTag() + "_tert");
 		}
 		for (int i = 0; i < materialTL.length; i++) {
 			materialTL[i].printTags();
@@ -198,22 +207,20 @@ public class Map {
 	public static void generateOrganisms() {
 		
 		animalTL = new Thing[(int) (generateRandomRuntime() * 50 + 10)];
-		
 		for (int i = 0; i < animalTL.length; i++) {
-			
 			int organicMat = (int) (generateRandomRuntime() * materialTL.length);
-			
+
 			while (!materialTL[organicMat].containsTag("orga_nmod")) {
 				organicMat = (int) (generateRandomRuntime() * materialTL.length);
 			}
 			String skinMaterial = generateNumberTag(organicMat);
-			
+
 			organicMat = (int) (generateRandomRuntime() * materialTL.length);
 			while (!materialTL[organicMat].containsTag("orga_nmod")) {
 				organicMat = (int) (generateRandomRuntime() * materialTL.length);
 			}
 			String skelMaterial = generateNumberTag(organicMat);
-			
+
 			organicMat = (int) (generateRandomRuntime() * materialTL.length);
 			while (!materialTL[organicMat].containsTag("orga_nmod")) {
 				organicMat = (int) (generateRandomRuntime() * materialTL.length);
@@ -239,22 +246,21 @@ public class Map {
 				animalTL[i].addTag("ecol_" + generateNumberTag((int) (generateRandomRuntime() * 4)));
 				animalTL[i].addTag("stam_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
 				// need to contextualize - placement - shape - symmetry
-				System.out.println("for loop 1 ");
 				for (int j = 0; j < complexity; j++) {
 					int anatomyNum = ((int) (generateRandomRuntime() * (10 * 15.0 / (complexity + sizeNum))) + 1);
 
 					String prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
-			
+
 					while ((prereqCheck.equals("hand") || prereqCheck.equals("foot"))
 							&& !(animalTL[i].containsTag("japp") || animalTL[i].containsTag("tent"))) {
 						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
 					}
-			
+
 					while (prereqCheck.equals("claw")
 							&& !(animalTL[i].containsTag("hand") || animalTL[i].containsTag("foot"))) {
 						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
 					}
-			
+
 					while ((prereqCheck.equals("tetn") || prereqCheck.equals("tetl"))
 							&& !animalTL[i].containsTag("mout")) {
 						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
@@ -264,26 +270,27 @@ public class Map {
 							&& anatomyNum % 2 == 1) {
 						anatomyNum++;
 					}
-					prereqCheck += "_" + generateQualityModTag() + "_"
-							+ specialTL[(int) (generateRandomRuntime() * specialTL.length)];
-					animalTL[i].addTag(prereqCheck + "_" + generateNumberTag(anatomyNum));
+					prereqCheck += "_" + generateNumberTag(anatomyNum) + "_"
+							+ specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_"
+							+ generateQualityModTag();
+					animalTL[i].addTag(prereqCheck);
 				}
 			} else {
 				animalTL[i].addTag("plnt");
 				int sizeNum = (int) (generateRandomRuntime() * 15) + 1;
 				animalTL[i].addTag("size_" + generateNumberTag(sizeNum));
 				animalTL[i].addTag("ecol_" + generateNumberTag(((int) (generateRandomRuntime() * 11)) / 9));
-			
+
 				// need to contextualize - placement - shape - symmetry - prerequisite(?)
 				for (int j = 0; j < complexity; j++) {
-					String prereqCheck = generateQualityModTag() + "_"
-							+ anatomyPTL[(int) (generateRandomRuntime() * anatomyPTL.length)];
-					prereqCheck += "_" + generateQualityModTag() + "_" + specialTL[(int) (generateRandomRuntime() * specialTL.length)];
+					String prereqCheck = anatomyPTL[(int) (generateRandomRuntime() * anatomyPTL.length)] + "_"
+							+ generateQualityModTag();
+					prereqCheck += "_" + specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_"
+							+ generateQualityModTag();
 					animalTL[i].addTag(prereqCheck);
 				}
 			}
 		}
-		
 		for (int i = 0; i < animalTL.length; i++) {
 			animalTL[i].printTags();
 		}
@@ -387,7 +394,6 @@ public class Map {
 		double tMin = Integer.MAX_VALUE;
 		double tMax = Integer.MIN_VALUE;
 
-	
 		for (int i = 0; i < 100; i++) {
 			generateRandomRuntime();
 		}
@@ -403,6 +409,8 @@ public class Map {
 			table[i] -= tMin;
 			table[i] /= (tMax - tMin);
 		}
+		
+
 		
 		worldSize = (int) (generateRandomRuntime() * 100) + 1;
 		biomeSect = new Thing[worldSize];
@@ -428,7 +436,7 @@ public class Map {
 		}
 
 		trueMap[getPlayerPosition()] = '@';
-		
+
 	}
 
 	public Player isPlayer(int position) {

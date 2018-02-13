@@ -13,6 +13,8 @@ public class Core {
 	protected void run() {
 		Map map = new Map(scn.next());
 		scn.nextLine();
+		System.out.println();
+		System.out.println(map);
 		while (!gameOver()) {
 			map.adjustGoals();
 			map.checkStatus();
