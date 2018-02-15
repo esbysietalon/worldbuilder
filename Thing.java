@@ -5,7 +5,7 @@ public class Thing {
 	private String[] tagList = new String[0];
 	private static String lookup = "abcdefghijklmnopqrstuvwxyz0123456789";
 	private TagList newTL;
-	
+
 	public Thing() {
 		newTL = new TagList();
 	}
@@ -21,20 +21,27 @@ public class Thing {
 		tagList[tagList.length - 1] = tag;
 		mergeSort(tagList, 0, tagList.length - 1);
 	}
-	
+
 	public void addTag(String tag) {
 		newTL.addNode(new TagListNode(tag));
 	}
-	public void remTag(String tag) {
-		newTL.remNode(tag);
+
+	public void copyInto(Thing thing) {
+		newTL.copyTree(thing);
 	}
+	public void remTag(String tag) {
+		// newTL.remNode(tag);
+		newTL.remNodeTest(tag);
+	}
+
 	public String getValue(String tag) {
 		return newTL.findTag(tag);
 	}
+
 	public void printTags() {
 		newTL.printTags();
 	}
-	
+
 	public void oldAddTag(String tag) {
 		for (int i = 0; i < tagList.length; i++) {
 			if (tag.equals(tagList[i]))
@@ -103,6 +110,10 @@ public class Thing {
 		}
 	}
 
+	public void printTree() {
+		newTL.printTree();
+	}
+
 	public static int findInLookup(char a) {
 		char[] lookupArray = lookup.toCharArray();
 		for (int i = 0; i < lookupArray.length; i++) {
@@ -144,9 +155,9 @@ public class Thing {
 			j = j - i;
 			k = (k + 1) / 2;
 		}
-		if(compareAlphaValue(tagList[i].substring(0, 4), tag) == 0) {
+		if (compareAlphaValue(tagList[i].substring(0, 4), tag) == 0) {
 			return tagList[i];
-		}else {
+		} else {
 			return "NOTFOUND";
 		}
 	}
@@ -176,39 +187,43 @@ public class Thing {
 	}
 
 	public void generateBehavior() {
+
 		// food
 		if (containsTag("anim")) {
 			addTag("full_" + Integer.parseInt(getValue("size")));
 		}
 		if (containsTag("pnic")) {
-			
+
 		}
 		//
 		//
 		//
 	}
-
+	
+	
 	public void updateStatus() {
-		if (containsTag("full")) {
-			int fullness = Integer.parseInt(getValue("full"));
-			if (fullness > 0) {
-				remTag("full");
-				addTag("full_" + Map.generateNumberTag(fullness - 1));
-			} else {
-				remTag("full");
-				addTag("hngr_" + Map.generateNumberTag(Integer.parseInt(getValue("size"))));
+		newTL.readAndUpdate();
+		if (containsTag("anim_indv")) {
+			if (containsTag("full")) {
+				int fullness = Integer.parseInt(getValue("full"));
+				if (fullness > 0) {
+					remTag("full");
+					addTag("full_" + Map.generateNumberTag(fullness - 1));
+				} else {
+					remTag("full");
+					addTag("hngr_" + Map.generateNumberTag(Integer.parseInt(getValue("size"))));
+				}
 			}
 		}
 	}
 
 	public boolean containsTag(String tag) {
-		
+
 		return newTL.containsTag(tag);
-		/*for (int i = 0; i < tagList.length; i++) {
-			if (tagList[i].contains(tag))
-				return true;
-		}
-		return false;*/
+		/*
+		 * for (int i = 0; i < tagList.length; i++) { if (tagList[i].contains(tag))
+		 * return true; } return false;
+		 */
 	}
 
 	public void oldPrintTags() {

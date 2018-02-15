@@ -69,15 +69,16 @@ public class Map {
 			"nrgy" };
 
 	public static String[] anatomyTL = { "exos", "endo", "eyes", "furr", "scal", "leaf", "hand", "foot", "claw", "mout",
-			"head", "tail", "tent", "japp", "horn", "gill", "tetl", "tetn", "ears" };
-	public static String[] specialTL = { "proj", "spin", "spit", "acid", "stic", "pois" };
+			"head", "tail", "tent", "japp", "horn", "gill", "tetl", "tetn", "ears", "nose", "feel" };
+	public static String[] specialTL = { "proj", "spin", "spit", "acid", "stic", "pois", "spik", "slip" };
 	public static String[] anatomyPTL = { "vine", "leaf", "thor", "bark", "bran", "spin", "gill", "capp", "frui",
-			"flwr", "aloe", "stem", "move" };
+			"flwr", "aloe", "stem", "mvmt" };
 
 	public static String[] habitatTL = { "mtan", "arct", "tund", "dsrt", "trop", "sava", "lake", "rivr", "ocea", "deep",
 			"shal" };
 	public static String[] behaviorTL = { "pkht", "usoc", "noma", "lone", "nbld", "faml", "ambu", "deco", "danc",
-			"sing", "terr", "farm" }; // behavioural
+			"sing", "terr", "farm" }; // behavioural nbld is nestbuilding, noma is nomadic, usoc is eusocial, pkht is
+										// packhunting, terr is territorial
 
 	// traits
 	public static String[] mindTL = { "reas", "tool", "algn", "pers", "tele", "psio" }; // arranged from least int req
@@ -99,15 +100,27 @@ public class Map {
 	public static Thing[] materialTL = new Thing[0];
 	public static Thing[] biomeSect = new Thing[9];
 
+	public static Thing[] localWildlife;
+	public static Thing[] lWPop;
+
 	public Thing[] animalPop = new Thing[0];
 	public Thing[] plantPop = new Thing[0];
 
 	public static int currBiome = -1;
 
 	public static String generateNumberTag(int num) {
-		String output = (new Integer(num)).toString();
-		while (output.length() < 4) {
-			output = "0" + output;
+		String output = "0000";
+		if (num >= 0) {
+			output = (new Integer(num)).toString();
+			while (output.length() < 4) {
+				output = "0" + output;
+			}
+		} else {
+			output = (new Integer(num)).toString().substring(1);
+			while (output.length() < 3) {
+				output = "0" + output;
+			}
+			output = "-" + output;
 		}
 		return output;
 	}
@@ -125,9 +138,9 @@ public class Map {
 	}
 
 	public static void generateMaterials() {
-		int primaryLength = (int) (generateRandomRuntime() * 50) + 10;
-		int secondaryLength = (int) (generateRandomRuntime() * 25) + 10;
-		int tertiaryLength = (int) (generateRandomRuntime() * 12) + 10;
+		int primaryLength = (int) (generateRandomRuntime() * 70) + 30;
+		int secondaryLength = (int) (generateRandomRuntime() * primaryLength / 2) + 20 + primaryLength / 2;
+		int tertiaryLength = (int) (generateRandomRuntime() * secondaryLength / 2) + 10 + secondaryLength / 2;
 		materialTL = new Thing[primaryLength + secondaryLength + tertiaryLength];
 		for (int i = 0; i < primaryLength; i++) {
 			materialTL[i] = new Thing();
@@ -180,13 +193,17 @@ public class Map {
 			materialTL[i].addTag(matTraitsTL[(int) (matTraitsTL.length * generateRandomRuntime())] + "_"
 					+ generateQualityModTag() + "_tert");
 		}
+		boolean hasOrganic = false;
 		for (int i = 0; i < materialTL.length; i++) {
-			materialTL[i].printTags();
+			if (materialTL[i].containsTag("orga_nmod")) {
+				hasOrganic = true;
+				break;
+			}
 		}
-	}
-
-	public static void populateOrganisms() {
-
+		if (!hasOrganic) {
+			generateMaterials();
+			return;
+		}
 	}
 
 	public static void generateBiomes() {
@@ -204,9 +221,116 @@ public class Map {
 		System.out.println();
 	}
 
+	public static void populateOrganisms() {
+		localWildlife = new Thing[0];
+		lWPop = new Thing[0];
+		for (int i = 0; i < animalTL.length; i++) {
+			if (animalTL[i].containsTag("habi_" + generateNumberTag(currBiome))) {
+				Thing[] temp = localWildlife.clone();
+				localWildlife = new Thing[localWildlife.length + 1];
+				System.arraycopy(temp, 0, localWildlife, 0, temp.length);
+				localWildlife[localWildlife.length - 1] = animalTL[i];
+			}
+		}
+		int totalPop = 0;
+		for (int i = 0; i < localWildlife.length; i++) {
+			int eco = Integer.parseInt(localWildlife[i].getValue("ecol").substring(5));
+			int size = Integer.parseInt(localWildlife[i].getValue("size").substring(5));
+			int tempPop = (11 - size) * (2 - eco);
+			int distMod = 2;
+			if (localWildlife[i].containsTag("anim")) {
+				String behavior = localWildlife[i].getValue("bhvr").substring(5);
+				tempPop = (5 - size) * (4 - eco);
+				distMod = 5;
+				System.out.print(i + " size is " + size + " eco is " + eco + " ");
+				if (behavior.equals("pkht")) {
+					tempPop += 4;
+					System.out.print("pkht ");
+				}
+				if (behavior.equals("noma")) {
+					tempPop /= 2;
+					tempPop++;
+					distMod += 5;
+					System.out.print("noma ");
+				}
+				if (behavior.equals("lone")) {
+					tempPop = 1;
+					System.out.print("lone ");
+				}
+				if (behavior.equals("terr")) {
+					tempPop /= 3;
+					tempPop++;
+					distMod += 20;
+					System.out.print("terr ");
+				}
+				if (behavior.equals("faml")) {
+					tempPop += 4;
+					distMod -= 2;
+					System.out.print("faml ");
+				}
+				if (behavior.equals("farm")) {
+					tempPop *= 2;
+					distMod -= 2;
+					System.out.print("farm ");
+				}
+				System.out.print(tempPop + " ");
+				System.out.println();
+			}
+			Thing[] temp = lWPop.clone();
+			lWPop = new Thing[totalPop + tempPop];
+			System.arraycopy(temp, 0, lWPop, 0, temp.length);
+			int randX = (int) (generateRandomRuntime() * 25);
+			int randY = (int) (generateRandomRuntime() * 25);
+			for (int j = totalPop; j < totalPop + tempPop; j++) {
+				lWPop[j] = new Thing();
+				localWildlife[i].copyInto(lWPop[j]);
+				lWPop[j].addTag("posx_" + generateNumberTag(randX));
+				lWPop[j].addTag("posy_" + generateNumberTag(randY));
+				randX += (generateRandomRuntime() > 0.5) ? -1
+						: 1 * ((int) (generateRandomRuntime() * distMod / 2) + distMod / 2);
+				randY += (generateRandomRuntime() > 0.5) ? -1
+						: 1 * ((int) (generateRandomRuntime() * distMod / 2) + distMod / 2);
+				if (lWPop[j].containsTag("anim_spec")) {
+					lWPop[j].remTag("anim_spec");
+					lWPop[j].addTag("anim_indv");
+					int staminaMod = Integer.parseInt(lWPop[j].getValue("stam").substring(5));
+					int strengthMod = Integer.parseInt(lWPop[j].getValue("strm").substring(5));
+					int speedMod = Integer.parseInt(lWPop[j].getValue("spdm").substring(5));
+					int intMod = Integer.parseInt(lWPop[j].getValue("intm").substring(5));
+					lWPop[j].remTag("stam");
+					lWPop[j].remTag("strm");
+					lWPop[j].remTag("spdm");
+					lWPop[j].remTag("intm");
+					lWPop[j].addTag(
+							"stam_" + generateNumberTag((int) (staminaMod + ((generateRandomRuntime() > 0.5) ? -1 : 1)
+									* staminaMod * generateRandomRuntime() * 0.1)));
+					lWPop[j].addTag(
+							"strm_" + generateNumberTag((int) (strengthMod + ((generateRandomRuntime() > 0.5) ? -1 : 1)
+									* strengthMod * generateRandomRuntime() * 0.1)));
+					lWPop[j].addTag("spdm_" + generateNumberTag((int) (speedMod
+							+ ((generateRandomRuntime() > 0.5) ? -1 : 1) * speedMod * generateRandomRuntime() * 0.1)));
+					lWPop[j].addTag("intm_" + generateNumberTag((int) (intMod
+							+ ((generateRandomRuntime() > 0.5) ? -1 : 1) * intMod * generateRandomRuntime() * 0.1)));
+				}
+				if (lWPop[j].containsTag("plnt_spec")) {
+					lWPop[j].remTag("plnt_spec");
+					lWPop[j].addTag("plnt_indv");
+				}
+			}
+			totalPop += tempPop;
+		}
+		System.out.println();
+		System.out.println("INDIVIDUAL ANIMALS IN CURRENT BIOME(" + currBiome + ") : ");
+		System.out.println();
+		for (int i = 0; i < lWPop.length; i++) {
+			if (lWPop[i].containsTag("anim_indv"))
+				lWPop[i].printTags();
+		}
+	}
+
 	public static void generateOrganisms() {
-		
-		animalTL = new Thing[(int) (generateRandomRuntime() * 50 + 10)];
+
+		animalTL = new Thing[(int) (generateRandomRuntime() * 50 + 10 + worldSize * 2)];
 		for (int i = 0; i < animalTL.length; i++) {
 			int organicMat = (int) (generateRandomRuntime() * materialTL.length);
 
@@ -238,13 +362,14 @@ public class Map {
 			animalTL[i].addTag("spdm_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
 			int complexity = 5 + (int) (generateRandomRuntime() * 30);
 			animalTL[i].addTag("cplx_" + generateNumberTag(complexity));
-			
+
 			if (generateRandomRuntime() > 0.5) {
-				animalTL[i].addTag("anim");
-				int sizeNum = (int) (generateRandomRuntime() * 5) + 1;
+				animalTL[i].addTag("anim_spec");
+				int sizeNum = (int) (generateRandomRuntime() * 4) + 1;
 				animalTL[i].addTag("size_" + generateNumberTag(sizeNum));
 				animalTL[i].addTag("ecol_" + generateNumberTag((int) (generateRandomRuntime() * 4)));
 				animalTL[i].addTag("stam_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
+				animalTL[i].addTag("bhvr_" + behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)]);
 				// need to contextualize - placement - shape - symmetry
 				for (int j = 0; j < complexity; j++) {
 					int anatomyNum = ((int) (generateRandomRuntime() * (10 * 15.0 / (complexity + sizeNum))) + 1);
@@ -267,17 +392,23 @@ public class Map {
 					}
 
 					if (!prereqCheck.equals("claw") && !prereqCheck.equals("tetl") && !prereqCheck.equals("tetn")
-							&& anatomyNum % 2 == 1) {
+							&& !prereqCheck.equals("nose") && anatomyNum % 2 == 1) {
 						anatomyNum++;
+					}
+					if (prereqCheck.equals("ears") || prereqCheck.equals("eyes") || prereqCheck.equals("feel")
+							|| prereqCheck.equals("nose")) {
+						j--;
+						continue;
 					}
 					prereqCheck += "_" + generateNumberTag(anatomyNum) + "_"
 							+ specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_"
 							+ generateQualityModTag();
 					animalTL[i].addTag(prereqCheck);
+
 				}
 			} else {
-				animalTL[i].addTag("plnt");
-				int sizeNum = (int) (generateRandomRuntime() * 15) + 1;
+				animalTL[i].addTag("plnt_spec");
+				int sizeNum = (int) (generateRandomRuntime() * 10) + 1;
 				animalTL[i].addTag("size_" + generateNumberTag(sizeNum));
 				animalTL[i].addTag("ecol_" + generateNumberTag(((int) (generateRandomRuntime() * 11)) / 9));
 
@@ -292,9 +423,182 @@ public class Map {
 			}
 		}
 		for (int i = 0; i < animalTL.length; i++) {
-			animalTL[i].printTags();
+			if (!animalTL[i].containsTag("msen") || !animalTL[i].containsTag("ssen")) {
+				animalTL[i].remTag("msen");
+				animalTL[i].remTag("ssen");
+
+				double constRandom = generateRandomRuntime();
+				double constRandom2 = generateRandomRuntime();
+				while (Math.abs(constRandom2 - constRandom) < 0.25) {
+					constRandom2 = generateRandomRuntime();
+				}
+				int sizeNum = Integer.parseInt(animalTL[i].getValue("size").substring(5));
+				int complexity = Integer.parseInt(animalTL[i].getValue("cplx").substring(5));
+				int anatomyNum1 = ((int) (generateRandomRuntime() * (5 * 10.0 / (complexity + sizeNum))) + 1);
+				int anatomyNum2 = ((int) (generateRandomRuntime() * (5 * 10.0 / (complexity + sizeNum))) + 1);
+
+				String prereqCheck = "";
+				String prereqCheck2 = "";
+				if (constRandom < 1.0) {
+					prereqCheck = "eyes";
+				}
+				if (constRandom < 0.75) {
+					prereqCheck = "ears";
+				}
+				if (constRandom < 0.5) {
+					prereqCheck = "nose";
+				}
+				if (constRandom < 0.25) {
+					prereqCheck = "feel";
+				}
+
+				if (constRandom2 < 1.0) {
+					prereqCheck2 = "eyes";
+				}
+				if (constRandom2 < 0.75) {
+					prereqCheck2 = "ears";
+				}
+				if (constRandom2 < 0.5) {
+					prereqCheck2 = "nose";
+				}
+				if (constRandom2 < 0.25) {
+					prereqCheck2 = "feel";
+				}
+
+				if (anatomyNum1 % 2 == 1 && !prereqCheck.equals("nose")) {
+					anatomyNum1++;
+				}
+				if (anatomyNum2 % 2 == 1 && !prereqCheck2.equals("nose")) {
+					anatomyNum2++;
+				}
+				double sightScore = 0;
+				double hearScore = 0;
+				double feelScore = 0;
+				double smellScore = 0;
+				if (prereqCheck.equals("eyes")) {
+					int sightRange = (int) (generateRandomRuntime() * 100) + 1;
+					int sightResol = (int) (generateRandomRuntime() * 100) + 1;
+					int sightCone = (int) (generateRandomRuntime() * 351) + 10;
+
+					prereqCheck += "_rnge_" + generateNumberTag(sightRange);
+					prereqCheck += "_reso_" + generateNumberTag(sightResol);
+					prereqCheck += "_cone_" + generateNumberTag(sightCone);
+					sightScore = sightRange * sightResol * (sightCone / 360.0) + 1;
+				}
+				if (prereqCheck.equals("nose")) {
+					int smellRange = (int) (generateRandomRuntime() * 200) + 1;
+					int smellResol = (int) (generateRandomRuntime() * 70) + 1;
+					prereqCheck += "_rnge_" + generateNumberTag(smellRange);
+					prereqCheck += "_reso_" + generateNumberTag(smellResol);
+					smellScore = smellRange * smellResol + 1;
+				}
+				if (prereqCheck.equals("ears")) {
+					int hearRange = (int) (generateRandomRuntime() * 100) + 1;
+					int hearResol = (int) (generateRandomRuntime() * 100) + 1;
+					prereqCheck += "_rnge_" + generateNumberTag(hearRange);
+					prereqCheck += "_reso_" + generateNumberTag(hearResol);
+					hearScore = hearRange * hearResol * 0.5 + 1;
+				}
+				if (prereqCheck.equals("feel")) {
+					int feelRange = (int) ((generateRandomRuntime() * 100) + 1) / 90
+							* (int) (generateRandomRuntime() * 5 + 1);
+					prereqCheck += "_rnge_" + generateNumberTag((feelRange));
+					prereqCheck += "_reso_" + generateNumberTag(100);
+					feelScore = feelRange * 100 + 1;
+				}
+				if (prereqCheck2.equals("eyes")) {
+					int sightRange = (int) (generateRandomRuntime() * 100) + 1;
+					int sightResol = (int) (generateRandomRuntime() * 100) + 1;
+					int sightCone = (int) (generateRandomRuntime() * 351) + 10;
+
+					prereqCheck2 += "_rnge_" + generateNumberTag(sightRange);
+					prereqCheck2 += "_reso_" + generateNumberTag(sightResol);
+					prereqCheck2 += "_cone_" + generateNumberTag(sightCone);
+					sightScore = sightRange * sightResol * (sightCone / 360.0) + 1;
+				}
+				if (prereqCheck2.equals("nose")) {
+					int smellRange = (int) (generateRandomRuntime() * 200) + 1;
+					int smellResol = (int) (generateRandomRuntime() * 70) + 1;
+					prereqCheck2 += "_rnge_" + generateNumberTag(smellRange);
+					prereqCheck2 += "_reso_" + generateNumberTag(smellResol);
+					smellScore = smellRange * smellResol + 1;
+				}
+				if (prereqCheck2.equals("ears")) {
+					int hearRange = (int) (generateRandomRuntime() * 100) + 1;
+					int hearResol = (int) (generateRandomRuntime() * 100) + 1;
+					prereqCheck2 += "_rnge_" + generateNumberTag(hearRange);
+					prereqCheck2 += "_reso_" + generateNumberTag(hearResol);
+					hearScore = hearRange * hearResol * 0.5 + 1;
+				}
+				if (prereqCheck2.equals("feel")) {
+					int feelRange = (int) ((generateRandomRuntime() * 100) + 1) / 90
+							* (int) (generateRandomRuntime() * 5 + 1);
+					prereqCheck2 += "_rnge_" + generateNumberTag((feelRange));
+					prereqCheck2 += "_reso_" + generateNumberTag(100);
+					feelScore = feelRange * 100 + 1;
+				}
+				String msen = "";
+				String ssen = "";
+				double highest = 0.0;
+				double secondhighest = 0.0;
+				if (sightScore > 0) {
+					if (sightScore > secondhighest) {
+						if (sightScore > highest) {
+							highest = sightScore;
+							msen = "eyes";
+						} else {
+							secondhighest = sightScore;
+							ssen = "eyes";
+						}
+					}
+				}
+				if (smellScore > 0) {
+					if (smellScore > secondhighest) {
+						if (smellScore > highest) {
+							highest = smellScore;
+							msen = "nose";
+						} else {
+							secondhighest = smellScore;
+							ssen = "nose";
+						}
+					}
+				}
+				if (hearScore > 0) {
+					if (hearScore > secondhighest) {
+						if (hearScore > highest) {
+							highest = hearScore;
+							msen = "ears";
+						} else {
+							secondhighest = hearScore;
+							ssen = "ears";
+						}
+					}
+				}
+				if (feelScore > 0) {
+					if (feelScore > secondhighest) {
+						if (feelScore > highest) {
+							highest = feelScore;
+							msen = "feel";
+						} else {
+							secondhighest = feelScore;
+							ssen = "feel";
+						}
+					}
+				}
+				if (!msen.equals(""))
+					animalTL[i].addTag("msen_" + msen);
+				if (!ssen.equals(""))
+					animalTL[i].addTag("ssen_" + ssen);
+
+				prereqCheck += "_" + generateNumberTag(anatomyNum1) + "_"
+						+ specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_" + generateQualityModTag();
+				animalTL[i].addTag(prereqCheck);
+				prereqCheck2 += "_" + generateNumberTag(anatomyNum2) + "_"
+						+ specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_" + generateQualityModTag();
+				animalTL[i].addTag(prereqCheck2);
+			}
 		}
-		
+
 	}
 
 	public static int max(int a, int b) {
@@ -409,10 +713,8 @@ public class Map {
 			table[i] -= tMin;
 			table[i] /= (tMax - tMin);
 		}
-		
 
-		
-		worldSize = (int) (generateRandomRuntime() * 100) + 1;
+		worldSize = (int) (generateRandomRuntime() * 15) + 1;
 		biomeSect = new Thing[worldSize];
 		setBaseMap();
 		setTrueMap();
@@ -420,6 +722,7 @@ public class Map {
 		generateBiomes();
 		System.out.println("world size of " + worldSize);
 		generateOrganisms();
+		populateOrganisms();
 	}
 
 	public int intClamp(int num, int min, int max) {
