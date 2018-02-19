@@ -340,6 +340,15 @@ public class Map {
 		}
 	}
 
+	public static Thing getByID(String unID) {
+		for (int i = 0; i < lWPop.length; i++) {
+			if (lWPop[i].getValue("unID").substring(5).equals(unID)) {
+				return lWPop[i];
+			}
+		}
+		return null;
+	}
+
 	public static void updateCreatures() {
 		for (int i = 0; i < lWPop.length; i++) {
 			for (int j = 0; j < lWPop.length; j++) {

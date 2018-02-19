@@ -276,8 +276,104 @@ public class Thing {
 		return newTL.findAll(tag);
 	}
 
+	private void findPrey() {
+		int eco = Integer.parseInt(getValue("ecol").substring(5));
+		String subtext = "";
+		newTL.remNodeTest("prey");
+		String[] percValues;
+		switch (eco) {
+		case 0:
+			break;
+		case 1:
+			percValues = getAll("perc"); // 0123456789 -- 10 11 12 13 -- (10, 14)
+			for (int i = 0; i < percValues.length; i++) {
+				Thing thing = Map.getByID(percValues[i].substring(10, 14));
+				if (thing.containsTag("plnt")) {
+					int size = Integer.parseInt(getValue("size").substring(5));
+					int thingEco = Integer.parseInt(getValue("ecol").substring(5));
+					int thingSize = Integer.parseInt(thing.getValue("size").substring(5));
+					if (thingEco == 0) {
+						subtext += "_" + percValues[i].substring(10, 14);
+					}
+					if (thingEco == 1 && size > thingSize) {
+						subtext += "_" + percValues[i].substring(10, 14);
+					}
+
+				}
+			}
+			break;
+
+		case 2:
+			percValues = getAll("perc"); // 0123456789 -- 10 11 12 13 -- (10, 14)
+			for (int i = 0; i < percValues.length; i++) {
+				Thing thing = Map.getByID(percValues[i].substring(10, 14));
+				int size = Integer.parseInt(getValue("size").substring(5));
+				int thingEco = Integer.parseInt(getValue("ecol").substring(5));
+				int thingSize = Integer.parseInt(thing.getValue("size").substring(5));
+				int strMod = Integer.parseInt(getValue("strm").substring(5));
+				int spdMod = Integer.parseInt(getValue("spdm").substring(5));
+				int intMod = Integer.parseInt(getValue("intm").substring(5));
+				int tStrMod = Integer.parseInt(thing.getValue("strm").substring(5));
+				int tSpdMod = Integer.parseInt(thing.getValue("spdm").substring(5));
+
+				int sizeMod = 1;
+
+				if (thingEco != 0) {
+
+					if (containsTag("pkht")) {
+						sizeMod += 0.5 * (intMod / 100.0);
+					}
+
+					if (size * sizeMod * strMod > thingSize * tStrMod && (containsTag("ambu") || spdMod > tSpdMod)) {
+						subtext += "_" + percValues[i].substring(10, 14);
+					}
+				}
+
+			}
+			break;
+
+		case 3:
+			percValues = getAll("perc"); // 0123456789 -- 10 11 12 13 -- (10, 14)
+			for (int i = 0; i < percValues.length; i++) {
+				Thing thing = Map.getByID(percValues[i].substring(10, 14));
+
+				int size = Integer.parseInt(getValue("size").substring(5));
+				int thingEco = Integer.parseInt(getValue("ecol").substring(5));
+				int thingSize = Integer.parseInt(thing.getValue("size").substring(5));
+
+				if (thingEco == 0) {
+					subtext += "_" + percValues[i].substring(10, 14);
+				} else {
+					int strMod = Integer.parseInt(getValue("strm").substring(5));
+					int spdMod = Integer.parseInt(getValue("spdm").substring(5));
+					int intMod = Integer.parseInt(getValue("intm").substring(5));
+					int tStrMod = Integer.parseInt(thing.getValue("strm").substring(5));
+					int tSpdMod = Integer.parseInt(thing.getValue("spdm").substring(5));
+					int sizeMod = 1;
+
+					if (containsTag("pkht")) {
+						sizeMod += 0.5 * (intMod / 100.0);
+					}
+
+					if (size * sizeMod * strMod > thingSize * tStrMod && (containsTag("ambu") || spdMod > tSpdMod)) {
+						subtext += "_" + percValues[i].substring(10, 14);
+					}
+
+				}
+			}
+			break;
+
+		default:
+
+			break;
+
+		}
+		newTL.addNode(new TagListNode("prey" + subtext));
+	}
+
 	public void generateBehavior() {
 		// food
+		findPrey();
 		if (containsTag("anim")) {
 			addTag("full_" + Integer.parseInt(getValue("size")));
 		}

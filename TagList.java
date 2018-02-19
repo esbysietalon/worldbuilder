@@ -272,12 +272,7 @@ public class TagList {
 		return null;
 	}
 
-	public void remNode(String tag) {
-		TagListNode result = remNodeHelper(root, tag);
-		if (result != null) {
-			result.setActive(false);
-		}
-	}
+	
 
 	public void remNodeTest(String tag) {
 		TagListNode remNode = remTestHelper(root, tag);
