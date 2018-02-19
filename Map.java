@@ -206,6 +206,10 @@ public class Map {
 		}
 	}
 
+	public static boolean checkLOS() {
+		return true;
+	}
+
 	public static void generateBiomes() {
 		for (int i = 0; i < biomeSect.length; i++) {
 			biomeSect[i] = new Thing();
@@ -239,42 +243,46 @@ public class Map {
 			int tempPop = (11 - size) * (2 - eco);
 			int distMod = 2;
 			if (localWildlife[i].containsTag("anim")) {
-				String behavior = localWildlife[i].getValue("bhvr").substring(5);
+				String[] behaviorArr = localWildlife[i].getAll("bhvr");
 				tempPop = (5 - size) * (4 - eco);
-				distMod = 5;
-				System.out.print(i + " size is " + size + " eco is " + eco + " ");
-				if (behavior.equals("pkht")) {
-					tempPop += 4;
-					System.out.print("pkht ");
+				for (int j = 0; j < behaviorArr.length; j++) {
+					String behavior = behaviorArr[j].substring(5);
+
+					distMod = 5;
+					System.out.print(i + " size is " + size + " eco is " + eco + " behavior is " + behavior + " ");
+					if (behavior.equals("pkht")) {
+						tempPop += 4;
+
+					}
+					if (behavior.equals("noma")) {
+						tempPop /= 2;
+						tempPop++;
+						distMod += 5;
+
+					}
+					if (behavior.equals("lone")) {
+						tempPop = 1;
+
+					}
+					if (behavior.equals("terr")) {
+						tempPop /= 3;
+						tempPop++;
+						distMod += 20;
+
+					}
+					if (behavior.equals("faml")) {
+						tempPop += 4;
+						distMod -= 2;
+
+					}
+					if (behavior.equals("farm")) {
+						tempPop *= 2;
+						distMod -= 2;
+
+					}
+					System.out.print(tempPop + " ");
+					System.out.println();
 				}
-				if (behavior.equals("noma")) {
-					tempPop /= 2;
-					tempPop++;
-					distMod += 5;
-					System.out.print("noma ");
-				}
-				if (behavior.equals("lone")) {
-					tempPop = 1;
-					System.out.print("lone ");
-				}
-				if (behavior.equals("terr")) {
-					tempPop /= 3;
-					tempPop++;
-					distMod += 20;
-					System.out.print("terr ");
-				}
-				if (behavior.equals("faml")) {
-					tempPop += 4;
-					distMod -= 2;
-					System.out.print("faml ");
-				}
-				if (behavior.equals("farm")) {
-					tempPop *= 2;
-					distMod -= 2;
-					System.out.print("farm ");
-				}
-				System.out.print(tempPop + " ");
-				System.out.println();
 			}
 			Thing[] temp = lWPop.clone();
 			lWPop = new Thing[totalPop + tempPop];
@@ -290,6 +298,7 @@ public class Map {
 						: 1 * ((int) (generateRandomRuntime() * distMod / 2) + distMod / 2);
 				randY += (generateRandomRuntime() > 0.5) ? -1
 						: 1 * ((int) (generateRandomRuntime() * distMod / 2) + distMod / 2);
+				lWPop[j].addTag("orie_" + generateNumberTag((int) (generateRandomRuntime() * 360) + 1));
 				if (lWPop[j].containsTag("anim_spec")) {
 					lWPop[j].remTag("anim_spec");
 					lWPop[j].addTag("anim_indv");
@@ -326,6 +335,38 @@ public class Map {
 			if (lWPop[i].containsTag("anim_indv"))
 				lWPop[i].printTags();
 		}
+	}
+
+	public void updateCreatures() {
+		for (int i = 0; i < lWPop.length; i++) {
+			for (int j = 0; j < lWPop.length; j++) {
+				if (j == i)
+					continue;
+				lWPop[i].buildPerception(lWPop[j]);
+			}
+		}
+	}
+
+	public static int dist(int a, int b) {
+
+		if (a < 0) {
+			a = -a;
+		}
+		if (b < 0) {
+			b = -b;
+		}
+		int min = a;
+		int max = b;
+		if (a > b) {
+			max = min;
+			min = b;
+		}
+		int output = max * 1007 + min * 441;
+		if (max < min << 4) {
+			output -= max * 40;
+		}
+
+		return (output + 512) >> 10;
 	}
 
 	public static void generateOrganisms() {
@@ -369,7 +410,28 @@ public class Map {
 				animalTL[i].addTag("size_" + generateNumberTag(sizeNum));
 				animalTL[i].addTag("ecol_" + generateNumberTag((int) (generateRandomRuntime() * 4)));
 				animalTL[i].addTag("stam_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
-				animalTL[i].addTag("bhvr_" + behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)]);
+				for (int j = 0; j < complexity / 5 + 1; j++) {
+					String prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
+					while (prereqCheck.equals("pkht") && animalTL[i].containsTag("lone")) {
+						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
+					}
+					while (prereqCheck.equals("faml") && animalTL[i].containsTag("lone")) {
+						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
+					}
+					while (prereqCheck.equals("usoc") && animalTL[i].containsTag("lone")) {
+						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
+					}
+					while (prereqCheck.equals("lone") && animalTL[i].containsTag("pkht")) {
+						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
+					}
+					while (prereqCheck.equals("lone") && animalTL[i].containsTag("faml")) {
+						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
+					}
+					while (prereqCheck.equals("lone") && animalTL[i].containsTag("usoc")) {
+						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
+					}
+					animalTL[i].addTag("bhvr_" + behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)]);
+				}
 				// need to contextualize - placement - shape - symmetry
 				for (int j = 0; j < complexity; j++) {
 					int anatomyNum = ((int) (generateRandomRuntime() * (10 * 15.0 / (complexity + sizeNum))) + 1);
@@ -397,8 +459,7 @@ public class Map {
 					}
 					if (prereqCheck.equals("ears") || prereqCheck.equals("eyes") || prereqCheck.equals("feel")
 							|| prereqCheck.equals("nose")) {
-						j--;
-						continue;
+						
 					}
 					prereqCheck += "_" + generateNumberTag(anatomyNum) + "_"
 							+ specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_"
@@ -718,6 +779,7 @@ public class Map {
 		biomeSect = new Thing[worldSize];
 		setBaseMap();
 		setTrueMap();
+
 		generateMaterials();
 		generateBiomes();
 		System.out.println("world size of " + worldSize);
