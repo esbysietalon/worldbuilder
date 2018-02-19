@@ -188,135 +188,84 @@ public class Thing {
 	}
 
 	public void buildPerception(Thing thing) {
-		int x = Integer.parseInt(getValue("posX"));
-		int y = Integer.parseInt(getValue("posY"));
-		int thingX = Integer.parseInt(thing.getValue("posX"));
-		int thingY = Integer.parseInt(thing.getValue("posY"));
+		int x = Integer.parseInt(getValue("posx").substring(5, 9));
+		int y = Integer.parseInt(getValue("posy").substring(5, 9));
+		int thingX = Integer.parseInt(thing.getValue("posx").substring(5, 9));
+		int thingY = Integer.parseInt(thing.getValue("posy").substring(5, 9));
 		int dx = thingX - x;
 		int dy = thingY - y;
-		if (getValue("msen").substring(5).equals("eyes")) {
-			int range = Integer.parseInt(getValue("eyes").substring(10, 14));
-			int reso = Integer.parseInt(getValue("eyes").substring(20, 24));
-			int cone = Integer.parseInt(getValue("eyes").substring(30, 34));
-			if (Map.dist(dx, dy) < range) {
-				int orie = Integer.parseInt(getValue("orie").substring(5, 9));
-				int lb = orie - cone / 2;
-				int ub = orie + cone / 2;
-				int angle = (int) (Math.atan2(dy, dx) / Math.PI * 180);
-				if (angle >= lb && angle <= ub) {
+		if (containsTag("eyes")) {
+			String[] eyeValues = getAll("eyes");
+			for (int i = 0; i < eyeValues.length; i++) {
+				int range = Integer.parseInt(eyeValues[i].substring(10, 14));
+				int reso = Integer.parseInt(eyeValues[i].substring(20, 24));
+				int cone = Integer.parseInt(eyeValues[i].substring(30, 34));
+				if (Map.dist(dx, dy) < range) {
+					int orie = Integer.parseInt(getValue("orie").substring(5, 9));
+					int lb = orie - cone / 2;
+					int ub = orie + cone / 2;
+					int angle = (int) (Math.atan2(dy, dx) / Math.PI * 180);
+					if (angle >= lb && angle <= ub) {
+						int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+								* Map.generateRandomRuntime() * thingX * reso / 100.0);
+						int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+								* Map.generateRandomRuntime() * thingY * reso / 100.0);
+						if (Map.checkLOS()) {
+							newTL.addNode(new TagListNode("perc_seen_" + thing.getValue("unid").substring(5) + "_"
+									+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY)));
+						}
+					}
+				}
+			}
+		}
+		if (containsTag("feel")) {
+			String[] feelValues = getAll("feel");
+			for (int i = 0; i < feelValues.length; i++) {
+				int range = Integer.parseInt(feelValues[i].substring(10, 14));
+				int reso = Integer.parseInt(feelValues[i].substring(20, 24));
+				if (Map.dist(dx, dy) < range) {
 					int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
 							* Map.generateRandomRuntime() * thingX * reso / 100.0);
 					int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
 							* Map.generateRandomRuntime() * thingY * reso / 100.0);
 					if (Map.checkLOS()) {
-						newTL.addNode(new TagListNode("perc_seen_" + thing.getValue("unid") + "_"
+						newTL.addNode(new TagListNode("perc_felt_" + thing.getValue("unid").substring(5) + "_"
 								+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY)));
 					}
 				}
 			}
 		}
-		if (getValue("msen").substring(5).equals("feel")) {
-			int range = Integer.parseInt(getValue("feel").substring(10, 14));
-			int reso = Integer.parseInt(getValue("feel").substring(20, 24));
-			if (Map.dist(dx, dy) < range) {
-				int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingX * reso / 100.0);
-				int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingY * reso / 100.0);
-				if (Map.checkLOS()) {
-					newTL.addNode(new TagListNode("perc_felt_" + thing.getValue("unid") + "_"
-							+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY)));
-				}
-			}
-		}
-		if (getValue("msen").substring(5).equals("nose")) {
-			int range = Integer.parseInt(getValue("nose").substring(10, 14));
-			int reso = Integer.parseInt(getValue("nose").substring(20, 24));
-			if (Map.dist(dx, dy) < range) {
-				int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingX * reso / 100.0);
-				int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingY * reso / 100.0);
-				if (Map.checkLOS()) {
-					newTL.addNode(new TagListNode("perc_smlt_" + thing.getValue("unid") + "_"
-							+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY)));
-				}
-			}
-		}
-		if (getValue("msen").substring(5).equals("ears")) {
-			int range = Integer.parseInt(getValue("ears").substring(10, 14));
-			int reso = Integer.parseInt(getValue("ears").substring(20, 24));
-			if (Map.dist(dx, dy) < range) {
-				int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingX * reso / 100.0);
-				int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingY * reso / 100.0);
-				if (Map.checkLOS()) {
-					newTL.addNode(new TagListNode("perc_eard_" + thing.getValue("unid") + "_"
-							+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY)));
-				}
-			}
-		}
-		if (getValue("ssen").substring(5).equals("eyes")) {
-			int range = Integer.parseInt(getValue("eyes").substring(10, 14));
-			int reso = Integer.parseInt(getValue("eyes").substring(20, 24));
-			int cone = Integer.parseInt(getValue("eyes").substring(30, 34));
-			if (Map.dist(dx, dy) < range) {
-				int orie = Integer.parseInt(getValue("orie").substring(5, 9));
-				int lb = orie - cone / 2;
-				int ub = orie + cone / 2;
-				int angle = (int) (Math.atan2(dy, dx) / Math.PI * 180);
-				if (angle >= lb && angle <= ub) {
+		if (containsTag("nose")) {
+			String[] noseValues = getAll("nose");
+			for (int i = 0; i < noseValues.length; i++) {
+				int range = Integer.parseInt(noseValues[i].substring(10, 14));
+				int reso = Integer.parseInt(noseValues[i].substring(20, 24));
+				if (Map.dist(dx, dy) < range) {
 					int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
 							* Map.generateRandomRuntime() * thingX * reso / 100.0);
 					int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
 							* Map.generateRandomRuntime() * thingY * reso / 100.0);
 					if (Map.checkLOS()) {
-						newTL.addNode(new TagListNode("perc_seen_" + thing.getValue("unid") + "_"
+						newTL.addNode(new TagListNode("perc_smlt_" + thing.getValue("unid").substring(5) + "_"
 								+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY)));
 					}
 				}
 			}
 		}
-		if (getValue("ssen").substring(5).equals("feel")) {
-			int range = Integer.parseInt(getValue("feel").substring(10, 14));
-			int reso = Integer.parseInt(getValue("feel").substring(20, 24));
-			if (Map.dist(dx, dy) < range) {
-				int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingX * reso / 100.0);
-				int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingY * reso / 100.0);
-				if (Map.checkLOS()) {
-					newTL.addNode(new TagListNode("perc_felt_" + thing.getValue("unid") + "_"
-							+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY)));
-				}
-			}
-		}
-		if (getValue("ssen").substring(5).equals("nose")) {
-			int range = Integer.parseInt(getValue("nose").substring(10, 14));
-			int reso = Integer.parseInt(getValue("nose").substring(20, 24));
-			if (Map.dist(dx, dy) < range) {
-				int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingX * reso / 100.0);
-				int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingY * reso / 100.0);
-				if (Map.checkLOS()) {
-					newTL.addNode(new TagListNode("perc_smlt_" + thing.getValue("unid") + "_"
-							+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY)));
-				}
-			}
-		}
-		if (getValue("ssen").substring(5).equals("ears")) {
-			int range = Integer.parseInt(getValue("ears").substring(10, 14));
-			int reso = Integer.parseInt(getValue("ears").substring(20, 24));
-			if (Map.dist(dx, dy) < range) {
-				int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingX * reso / 100.0);
-				int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) * Map.generateRandomRuntime()
-						* thingY * reso / 100.0);
-				if (Map.checkLOS()) {
-					newTL.addNode(new TagListNode("perc_eard_" + thing.getValue("unid") + "_"
-							+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY)));
+		if (containsTag("ears")) {
+			String[] earValues = getAll("ears");
+			for (int i = 0; i < earValues.length; i++) {
+				int range = Integer.parseInt(earValues[i].substring(10, 14));
+				int reso = Integer.parseInt(earValues[i].substring(20, 24));
+				if (Map.dist(dx, dy) < range) {
+					int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+							* Map.generateRandomRuntime() * thingX * reso / 100.0);
+					int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+							* Map.generateRandomRuntime() * thingY * reso / 100.0);
+					if (Map.checkLOS()) {
+						newTL.addNode(new TagListNode("perc_eard_" + thing.getValue("unid").substring(5) + "_"
+								+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY)));
+					}
 				}
 			}
 		}

@@ -8,6 +8,7 @@ public class Map {
 	private int playerX = 12;
 	private int playerY = 12;
 	private Player player;
+	private static String[] unIDs = new String[0];
 	private static int[] hash = { 722, 719, 326, 682, 439, 52, 895, 650, 206, 766, 664, 734, 940, 801, 507, 381, 711,
 			213, 481, 855, 628, 71, 768, 25, 806, 78, 11, 420, 72, 385, 653, 590, 509, 140, 937, 15, 919, 314, 574, 24,
 			101, 464, 632, 82, 312, 665, 533, 804, 243, 881, 151, 857, 496, 516, 620, 677, 192, 523, 818, 510, 974, 911,
@@ -292,13 +293,6 @@ public class Map {
 			for (int j = totalPop; j < totalPop + tempPop; j++) {
 				lWPop[j] = new Thing();
 				localWildlife[i].copyInto(lWPop[j]);
-				lWPop[j].addTag("posx_" + generateNumberTag(randX));
-				lWPop[j].addTag("posy_" + generateNumberTag(randY));
-				randX += (generateRandomRuntime() > 0.5) ? -1
-						: 1 * ((int) (generateRandomRuntime() * distMod / 2) + distMod / 2);
-				randY += (generateRandomRuntime() > 0.5) ? -1
-						: 1 * ((int) (generateRandomRuntime() * distMod / 2) + distMod / 2);
-				lWPop[j].addTag("orie_" + generateNumberTag((int) (generateRandomRuntime() * 360) + 1));
 				if (lWPop[j].containsTag("anim_spec")) {
 					lWPop[j].remTag("anim_spec");
 					lWPop[j].addTag("anim_indv");
@@ -325,26 +319,55 @@ public class Map {
 					lWPop[j].remTag("plnt_spec");
 					lWPop[j].addTag("plnt_indv");
 				}
+				lWPop[j].addTag("posx_" + generateNumberTag(randX));
+				lWPop[j].addTag("posy_" + generateNumberTag(randY));
+				randX += (generateRandomRuntime() > 0.5) ? -1
+						: 1 * ((int) (generateRandomRuntime() * distMod / 2) + distMod / 2);
+				randY += (generateRandomRuntime() > 0.5) ? -1
+						: 1 * ((int) (generateRandomRuntime() * distMod / 2) + distMod / 2);
+				lWPop[j].addTag("orie_" + generateNumberTag((int) (generateRandomRuntime() * 360) + 1));
+				lWPop[j].addTag("unid_" + generateUniqueID());
 			}
 			totalPop += tempPop;
 		}
 		System.out.println();
 		System.out.println("INDIVIDUAL ANIMALS IN CURRENT BIOME(" + currBiome + ") : ");
 		System.out.println();
+		updateCreatures();
 		for (int i = 0; i < lWPop.length; i++) {
 			if (lWPop[i].containsTag("anim_indv"))
 				lWPop[i].printTags();
 		}
 	}
 
-	public void updateCreatures() {
+	public static void updateCreatures() {
 		for (int i = 0; i < lWPop.length; i++) {
 			for (int j = 0; j < lWPop.length; j++) {
 				if (j == i)
 					continue;
+				if (!lWPop[j].containsTag("posx"))
+					lWPop[j].printTags();
 				lWPop[i].buildPerception(lWPop[j]);
 			}
 		}
+	}
+
+	public static String generateUniqueID() {
+		String newID = generateNumberTag((int) (generateRandomRuntime() * 9999) + 1);
+		boolean collision = true;
+		while (collision) {
+			collision = false;
+			for (int i = 0; i < unIDs.length; i++) {
+				if (unIDs[i].equals(newID)) {
+					collision = true;
+				}
+			}
+		}
+		String[] temp = unIDs.clone();
+		unIDs = new String[unIDs.length + 1];
+		System.arraycopy(temp, 0, unIDs, 0, temp.length);
+		unIDs[unIDs.length - 1] = newID;
+		return newID;
 	}
 
 	public static int dist(int a, int b) {
@@ -457,9 +480,32 @@ public class Map {
 							&& !prereqCheck.equals("nose") && anatomyNum % 2 == 1) {
 						anatomyNum++;
 					}
-					if (prereqCheck.equals("ears") || prereqCheck.equals("eyes") || prereqCheck.equals("feel")
-							|| prereqCheck.equals("nose")) {
-						
+					if (prereqCheck.equals("eyes")) {
+						int sightRange = (int) (generateRandomRuntime() * 100) + 1;
+						int sightResol = (int) (generateRandomRuntime() * 100) + 1;
+						int sightCone = (int) (generateRandomRuntime() * 351) + 10;
+
+						prereqCheck += "_rnge_" + generateNumberTag(sightRange);
+						prereqCheck += "_reso_" + generateNumberTag(sightResol);
+						prereqCheck += "_cone_" + generateNumberTag(sightCone);
+					}
+					if (prereqCheck.equals("nose")) {
+						int smellRange = (int) (generateRandomRuntime() * 200) + 1;
+						int smellResol = (int) (generateRandomRuntime() * 70) + 1;
+						prereqCheck += "_rnge_" + generateNumberTag(smellRange);
+						prereqCheck += "_reso_" + generateNumberTag(smellResol);
+					}
+					if (prereqCheck.equals("ears")) {
+						int hearRange = (int) (generateRandomRuntime() * 100) + 1;
+						int hearResol = (int) (generateRandomRuntime() * 100) + 1;
+						prereqCheck += "_rnge_" + generateNumberTag(hearRange);
+						prereqCheck += "_reso_" + generateNumberTag(hearResol);
+					}
+					if (prereqCheck.equals("feel")) {
+						int feelRange = (int) ((generateRandomRuntime() * 100) + 1) / 90
+								* (int) (generateRandomRuntime() * 5 + 1);
+						prereqCheck += "_rnge_" + generateNumberTag((feelRange));
+						prereqCheck += "_reso_" + generateNumberTag(100);
 					}
 					prereqCheck += "_" + generateNumberTag(anatomyNum) + "_"
 							+ specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_"
@@ -481,182 +527,6 @@ public class Map {
 							+ generateQualityModTag();
 					animalTL[i].addTag(prereqCheck);
 				}
-			}
-		}
-		for (int i = 0; i < animalTL.length; i++) {
-			if (!animalTL[i].containsTag("msen") || !animalTL[i].containsTag("ssen")) {
-				animalTL[i].remTag("msen");
-				animalTL[i].remTag("ssen");
-
-				double constRandom = generateRandomRuntime();
-				double constRandom2 = generateRandomRuntime();
-				while (Math.abs(constRandom2 - constRandom) < 0.25) {
-					constRandom2 = generateRandomRuntime();
-				}
-				int sizeNum = Integer.parseInt(animalTL[i].getValue("size").substring(5));
-				int complexity = Integer.parseInt(animalTL[i].getValue("cplx").substring(5));
-				int anatomyNum1 = ((int) (generateRandomRuntime() * (5 * 10.0 / (complexity + sizeNum))) + 1);
-				int anatomyNum2 = ((int) (generateRandomRuntime() * (5 * 10.0 / (complexity + sizeNum))) + 1);
-
-				String prereqCheck = "";
-				String prereqCheck2 = "";
-				if (constRandom < 1.0) {
-					prereqCheck = "eyes";
-				}
-				if (constRandom < 0.75) {
-					prereqCheck = "ears";
-				}
-				if (constRandom < 0.5) {
-					prereqCheck = "nose";
-				}
-				if (constRandom < 0.25) {
-					prereqCheck = "feel";
-				}
-
-				if (constRandom2 < 1.0) {
-					prereqCheck2 = "eyes";
-				}
-				if (constRandom2 < 0.75) {
-					prereqCheck2 = "ears";
-				}
-				if (constRandom2 < 0.5) {
-					prereqCheck2 = "nose";
-				}
-				if (constRandom2 < 0.25) {
-					prereqCheck2 = "feel";
-				}
-
-				if (anatomyNum1 % 2 == 1 && !prereqCheck.equals("nose")) {
-					anatomyNum1++;
-				}
-				if (anatomyNum2 % 2 == 1 && !prereqCheck2.equals("nose")) {
-					anatomyNum2++;
-				}
-				double sightScore = 0;
-				double hearScore = 0;
-				double feelScore = 0;
-				double smellScore = 0;
-				if (prereqCheck.equals("eyes")) {
-					int sightRange = (int) (generateRandomRuntime() * 100) + 1;
-					int sightResol = (int) (generateRandomRuntime() * 100) + 1;
-					int sightCone = (int) (generateRandomRuntime() * 351) + 10;
-
-					prereqCheck += "_rnge_" + generateNumberTag(sightRange);
-					prereqCheck += "_reso_" + generateNumberTag(sightResol);
-					prereqCheck += "_cone_" + generateNumberTag(sightCone);
-					sightScore = sightRange * sightResol * (sightCone / 360.0) + 1;
-				}
-				if (prereqCheck.equals("nose")) {
-					int smellRange = (int) (generateRandomRuntime() * 200) + 1;
-					int smellResol = (int) (generateRandomRuntime() * 70) + 1;
-					prereqCheck += "_rnge_" + generateNumberTag(smellRange);
-					prereqCheck += "_reso_" + generateNumberTag(smellResol);
-					smellScore = smellRange * smellResol + 1;
-				}
-				if (prereqCheck.equals("ears")) {
-					int hearRange = (int) (generateRandomRuntime() * 100) + 1;
-					int hearResol = (int) (generateRandomRuntime() * 100) + 1;
-					prereqCheck += "_rnge_" + generateNumberTag(hearRange);
-					prereqCheck += "_reso_" + generateNumberTag(hearResol);
-					hearScore = hearRange * hearResol * 0.5 + 1;
-				}
-				if (prereqCheck.equals("feel")) {
-					int feelRange = (int) ((generateRandomRuntime() * 100) + 1) / 90
-							* (int) (generateRandomRuntime() * 5 + 1);
-					prereqCheck += "_rnge_" + generateNumberTag((feelRange));
-					prereqCheck += "_reso_" + generateNumberTag(100);
-					feelScore = feelRange * 100 + 1;
-				}
-				if (prereqCheck2.equals("eyes")) {
-					int sightRange = (int) (generateRandomRuntime() * 100) + 1;
-					int sightResol = (int) (generateRandomRuntime() * 100) + 1;
-					int sightCone = (int) (generateRandomRuntime() * 351) + 10;
-
-					prereqCheck2 += "_rnge_" + generateNumberTag(sightRange);
-					prereqCheck2 += "_reso_" + generateNumberTag(sightResol);
-					prereqCheck2 += "_cone_" + generateNumberTag(sightCone);
-					sightScore = sightRange * sightResol * (sightCone / 360.0) + 1;
-				}
-				if (prereqCheck2.equals("nose")) {
-					int smellRange = (int) (generateRandomRuntime() * 200) + 1;
-					int smellResol = (int) (generateRandomRuntime() * 70) + 1;
-					prereqCheck2 += "_rnge_" + generateNumberTag(smellRange);
-					prereqCheck2 += "_reso_" + generateNumberTag(smellResol);
-					smellScore = smellRange * smellResol + 1;
-				}
-				if (prereqCheck2.equals("ears")) {
-					int hearRange = (int) (generateRandomRuntime() * 100) + 1;
-					int hearResol = (int) (generateRandomRuntime() * 100) + 1;
-					prereqCheck2 += "_rnge_" + generateNumberTag(hearRange);
-					prereqCheck2 += "_reso_" + generateNumberTag(hearResol);
-					hearScore = hearRange * hearResol * 0.5 + 1;
-				}
-				if (prereqCheck2.equals("feel")) {
-					int feelRange = (int) ((generateRandomRuntime() * 100) + 1) / 90
-							* (int) (generateRandomRuntime() * 5 + 1);
-					prereqCheck2 += "_rnge_" + generateNumberTag((feelRange));
-					prereqCheck2 += "_reso_" + generateNumberTag(100);
-					feelScore = feelRange * 100 + 1;
-				}
-				String msen = "";
-				String ssen = "";
-				double highest = 0.0;
-				double secondhighest = 0.0;
-				if (sightScore > 0) {
-					if (sightScore > secondhighest) {
-						if (sightScore > highest) {
-							highest = sightScore;
-							msen = "eyes";
-						} else {
-							secondhighest = sightScore;
-							ssen = "eyes";
-						}
-					}
-				}
-				if (smellScore > 0) {
-					if (smellScore > secondhighest) {
-						if (smellScore > highest) {
-							highest = smellScore;
-							msen = "nose";
-						} else {
-							secondhighest = smellScore;
-							ssen = "nose";
-						}
-					}
-				}
-				if (hearScore > 0) {
-					if (hearScore > secondhighest) {
-						if (hearScore > highest) {
-							highest = hearScore;
-							msen = "ears";
-						} else {
-							secondhighest = hearScore;
-							ssen = "ears";
-						}
-					}
-				}
-				if (feelScore > 0) {
-					if (feelScore > secondhighest) {
-						if (feelScore > highest) {
-							highest = feelScore;
-							msen = "feel";
-						} else {
-							secondhighest = feelScore;
-							ssen = "feel";
-						}
-					}
-				}
-				if (!msen.equals(""))
-					animalTL[i].addTag("msen_" + msen);
-				if (!ssen.equals(""))
-					animalTL[i].addTag("ssen_" + ssen);
-
-				prereqCheck += "_" + generateNumberTag(anatomyNum1) + "_"
-						+ specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_" + generateQualityModTag();
-				animalTL[i].addTag(prereqCheck);
-				prereqCheck2 += "_" + generateNumberTag(anatomyNum2) + "_"
-						+ specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_" + generateQualityModTag();
-				animalTL[i].addTag(prereqCheck2);
 			}
 		}
 
