@@ -332,9 +332,37 @@ public class Map {
 			totalPop += tempPop;
 		}
 		System.out.println();
-		System.out.println("INDIVIDUAL ANIMALS IN CURRENT BIOME(" + currBiome + ") : " + lWPop.length);
+		System.out.println("INDIVIDUALS IN CURRENT BIOME(" + currBiome + ") : " + lWPop.length);
 		System.out.println();
 		updateCreatures();
+	}
+
+	// transformative functions on generateRandomRuntime(), useful for cases that
+	// require
+	// randomness but not linear randomness
+	public static double generateRandomQuintic() {
+		double x = generateRandomRuntime() - 0.5;
+		return 16 * (x * x * x * x * x) + 0.5;
+	}
+
+	public static double generateRandomSigmoid() {
+		double x = generateRandomRuntime() - 0.5;
+		return 1 / (1 + Math.pow(Math.E, -16 * x));
+	}
+
+	private static double getQuintic(double x) {
+		return 16 * (x * x * x * x * x) + 0.5;
+	}
+
+	public static double generateRandomTieredQuintic() {
+		double x = generateRandomRuntime();
+		if (x < 0.5) {
+			return 0.5 * getQuintic(2 * x);
+		}
+		if (x >= 0.5) {
+			return 0.5 * getQuintic(2 * (x - 0.5)) + 0.5;
+		}
+		return x;
 	}
 
 	public static Thing getByID(String unID) {
@@ -351,6 +379,8 @@ public class Map {
 			for (int j = 0; j < lWPop.length; j++) {
 				if (j == i)
 					continue;
+				if (lWPop[i].containsTag("anim"))
+					lWPop[i].printTags();
 				lWPop[i].buildPerception(lWPop[j]);
 				lWPop[i].updateStatus();
 				lWPop[i].generateBehavior();
@@ -466,17 +496,20 @@ public class Map {
 				}
 				// need to contextualize - placement - shape - symmetry
 				for (int j = 0; j < complexity; j++) {
-					int anatomyNum = ((int) (generateRandomRuntime() * (10 * 15.0 / (complexity + sizeNum))) + 1);
+					int anatomyNum = ((int) (generateRandomQuintic() * (10 * 15.0 / (complexity + sizeNum))) + 1);
 
 					String prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
 
 					while ((prereqCheck.equals("hand") || prereqCheck.equals("foot"))
-							&& !(animalTL[i].containsTag("japp") || animalTL[i].containsTag("tent"))) {
+							&& (animalTL[i].getAll("hand").length
+									+ animalTL[i].getAll("foot").length >= animalTL[i].getAll("japp").length
+											+ animalTL[i].getAll("tent").length + animalTL[i].getAll("tail").length)) {
 						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
 					}
 
 					while (prereqCheck.equals("claw")
-							&& !(animalTL[i].containsTag("hand") || animalTL[i].containsTag("foot"))) {
+							&& (animalTL[i].getAll("claw").length >= animalTL[i].getAll("hand").length
+									+ animalTL[i].getAll("foot").length)) {
 						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
 					}
 
@@ -485,9 +518,17 @@ public class Map {
 						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
 					}
 
+					if (prereqCheck.equals("nose") || prereqCheck.equals("eyes") || prereqCheck.equals("ears")
+							|| prereqCheck.equals("feel")) {
+						anatomyNum++;
+						anatomyNum /= 4;
+					}
 					if (!prereqCheck.equals("claw") && !prereqCheck.equals("tetl") && !prereqCheck.equals("tetn")
 							&& !prereqCheck.equals("nose") && anatomyNum % 2 == 1) {
 						anatomyNum++;
+					}
+					if(prereqCheck.equals("claw")) {
+						anatomyNum = ((int) (generateRandomRuntime() * (10 * 15.0 / (complexity + sizeNum))) + 1);
 					}
 					if (prereqCheck.equals("eyes")) {
 						int sightRange = (int) (generateRandomRuntime() * 100) + 1;
