@@ -334,10 +334,7 @@ public class Map {
 		System.out.println("INDIVIDUAL ANIMALS IN CURRENT BIOME(" + currBiome + ") : ");
 		System.out.println();
 		updateCreatures();
-		for (int i = 0; i < lWPop.length; i++) {
-			if (lWPop[i].containsTag("anim_indv"))
-				lWPop[i].printTags();
-		}
+		
 	}
 
 	public static Thing getByID(String unID) {
@@ -659,7 +656,7 @@ public class Map {
 			table[i] -= tMin;
 			table[i] /= (tMax - tMin);
 		}
-
+		
 		worldSize = (int) (generateRandomRuntime() * 15) + 1;
 		biomeSect = new Thing[worldSize];
 		setBaseMap();

@@ -35,7 +35,9 @@ public class TagList {
 
 		if (node == null)
 			return;
-
+		
+		rebalanceHelper(node.getLeft());
+		rebalanceHelper(node.getRight());
 		int bf = balanceFactor(node);
 		if (bf > 1) {
 			int bff = balanceFactor(node.getRight());
@@ -55,12 +57,149 @@ public class TagList {
 				rotate("left", "left", node);
 			}
 		}
-		rebalanceHelper(node.getLeft());
-		rebalanceHelper(node.getRight());
+		
 	}
 
 	private void rebalance() {
 		rebalanceHelper(root);
+	}
+
+	private void rebalanceTest() {
+		rebalanceHelperTest(root);
+	}
+
+	private void rebalanceHelperTest(TagListNode node) {
+		if (node == null) {
+			return;
+		}
+		rebalanceHelperTest(node.getLeft());
+		rebalanceHelperTest(node.getRight());
+		int bf = balanceFactor(node);
+		if (bf < -1) {
+			int bff = balanceFactor(node.getLeft());
+			if (bff > 0) {
+				rotateTest("left", "right", node);
+			} else if (bff < 0) {
+				rotateTest("left", "left", node);
+			}
+		} else if (bf > 1) {
+			int bff = balanceFactor(node.getRight());
+			if (bff > 0) {
+				rotateTest("right", "right", node);
+			} else if (bff < 0) {
+				rotateTest("right", "left", node);
+			}
+		}
+		
+	}
+
+	private void rotateTest(String dir1, String dir2, TagListNode node) {
+		TagListNode one = node;
+		TagListNode oneP = one.getParent();
+		int onePRel = 0;
+		if (oneP != null) {
+			if (oneP.getLeft() != null && oneP.getLeft().getTag().equals(one.getTag())) {
+				onePRel = 1;
+			} else {
+				onePRel = 2;
+			}
+		}
+		if (dir1.equals("left") && dir2.equals("left")) {
+			TagListNode two = node.getLeft();
+			TagListNode twoR = two.getRight();
+			switch (onePRel) {
+			case 0:
+				root = two;
+				two.setParent(null);
+				one.setLeft(twoR);
+				if (twoR != null)
+					twoR.setParent(one);
+				one.setParent(two);
+				two.setRight(one);
+				break;
+			case 1:
+				oneP.setLeft(two);
+				two.setParent(oneP);
+				one.setLeft(twoR);
+				if (twoR != null)
+					twoR.setParent(one);
+				two.setRight(one);
+				one.setParent(two);
+				break;
+			case 2:
+				oneP.setRight(two);
+				two.setParent(oneP);
+				one.setLeft(twoR);
+				if (twoR != null)
+					twoR.setParent(one);
+				two.setRight(one);
+				one.setParent(two);
+				break;
+			default:
+				break;
+			}
+		}
+		if (dir1.equals("left") && dir2.equals("right")) {
+			TagListNode two = one.getLeft();
+			TagListNode three = two.getRight();
+			TagListNode threeL = three.getLeft();
+			one.setLeft(three);
+			three.setParent(one);
+			two.setRight(threeL);
+			if (threeL != null)
+				threeL.setParent(two);
+			three.setLeft(two);
+			two.setParent(three);
+			rotateTest("left", "left", node);
+		}
+		if (dir1.equals("right") && dir2.equals("right")) {
+			TagListNode two = one.getRight();
+			TagListNode twoL = two.getLeft();
+			switch (onePRel) {
+			case 0:
+				root = two;
+				two.setParent(null);
+				one.setRight(twoL);
+				if (twoL != null)
+					twoL.setParent(one);
+				two.setLeft(one);
+				one.setParent(two);
+				break;
+			case 1:
+				oneP.setLeft(two);
+				two.setParent(oneP);
+				one.setRight(twoL);
+				if (twoL != null)
+					twoL.setParent(one);
+				two.setLeft(one);
+				one.setParent(two);
+				break;
+			case 2:
+				oneP.setRight(two);
+				two.setParent(oneP);
+				one.setRight(twoL);
+				if (twoL != null)
+					twoL.setParent(one);
+				two.setLeft(one);
+				one.setParent(two);
+				break;
+			default:
+				break;
+			}
+		}
+		if (dir1.equals("right") && dir2.equals("left")) {
+			TagListNode two = one.getRight();
+			TagListNode three = two.getLeft();
+			TagListNode threeR = three.getRight();
+			one.setRight(three);
+			three.setParent(one);
+			two.setLeft(threeR);
+			if (threeR != null)
+				threeR.setParent(two);
+			three.setRight(two);
+			two.setParent(three);
+			rotateTest("right", "right", node);
+		}
 	}
 
 	private void rotate(String dir1, String dir2, TagListNode node) {
@@ -188,12 +327,7 @@ public class TagList {
 			return;
 		}
 		if (Thing.compareAlphaValue(node.getTag(), newNode.getTag()) == 0) {
-			if (node.isActive()) {
-				return;
-			} else {
-				node.setActive(true);
-				return;
-			}
+			return;
 		}
 		if (Thing.compareAlphaValue(node.getTag(), newNode.getTag()) > 0) {
 			if (node.getLeft() != null) {
@@ -220,7 +354,8 @@ public class TagList {
 
 	public void addNode(TagListNode node) {
 		placeNode(root, node);
-		rebalance();
+		rebalanceTest();
+		//rebalance();
 	}
 
 	private String findTagHelper(TagListNode node, String tag) {
@@ -271,8 +406,6 @@ public class TagList {
 		}
 		return null;
 	}
-
-	
 
 	public void remNodeTest(String tag) {
 		TagListNode remNode = remTestHelper(root, tag);
@@ -389,7 +522,8 @@ public class TagList {
 			}
 		}
 
-		rebalance();
+		 rebalanceTest();
+		//rebalance();
 	}
 
 	private void copyTreeHelper(Thing thing, TagListNode node) {
