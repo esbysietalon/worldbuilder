@@ -16,10 +16,6 @@ public class Core {
 		System.out.println();
 		System.out.println(map);
 		while (!gameOver()) {
-			map.adjustGoals();
-			map.checkStatus();
-			map.adjustGoals();
-			map.moveAnimals();
 			map.movePlayer(scn.next());
 
 			scn.nextLine();

@@ -56,8 +56,8 @@ public class Map {
 			952, 560, 953, 485, 890, 700, 203, 542, 505, 685, 443, 42, 643, 10, 591, 466, 487, 849, 549, 500, 261, 250,
 			350, 889, 208, 233, 211, 106, 48, 175, 559, 357, 776, 585, 146, 109, 488 };
 	public final String lookup = "!@#$%^&*()-=~`\\\'\"+_<>,.?/;:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-	public final String plantLookup = "XAVWOUMYTH";
-	public final String animalLookup = ">PRFKLD})S";
+	public final static String plantLookup = "XAVWOUMYTH";
+	public final static String animalLookup = ">PRFKLD})S";
 	private static int counter = 0;
 	private static double cc = 0;
 	private static double seedVal1 = 0;
@@ -69,9 +69,9 @@ public class Map {
 	public static String[] matTraitsTL = { "roug", "stic", "shin", "toxi", "bnce", "elas", "brit", "tran", "heat",
 			"nrgy" };
 
-	public static String[] anatomyTL = { "exos", "endo", "eyes", "furr", "scal", "leaf", "hand", "foot", "claw", "mout",
-			"head", "tail", "tent", "japp", "horn", "gill", "tetl", "tetn", "ears", "nose", "feel" };
-	public static String[] specialTL = { "proj", "spin", "spit", "acid", "stic", "pois", "spik", "slip" };
+	public static String[] anatomyTL = { "exos", "eyes", "furr", "scal", "leaf", "hand", "foot", "claw", "mout", "head",
+			"tail", "tent", "japp", "horn", "gill", "tetl", "tetn", "ears", "nose", "feel" };
+	public static String[] specialTL = { "proj", "spin", "spit", "acid", "stic", "pois", "spik", "slip", "sgmt" };
 	public static String[] anatomyPTL = { "vine", "leaf", "thor", "bark", "bran", "spin", "gill", "capp", "frui",
 			"flwr", "aloe", "stem", "mvmt" };
 
@@ -101,8 +101,8 @@ public class Map {
 	public static Thing[] materialTL = new Thing[0];
 	public static Thing[] biomeSect = new Thing[9];
 
-	public static Thing[] localWildlife;
-	public static Thing[] lWPop;
+	public static Thing[] localWildlife = new Thing[0];
+	public static Thing[] lWPop = new Thing[0];
 
 	public Thing[] animalPop = new Thing[0];
 	public Thing[] plantPop = new Thing[0];
@@ -438,6 +438,8 @@ public class Map {
 
 			if (generateRandomRuntime() > 0.5) {
 				animalTL[i].addTag("anim_spec");
+				animalTL[i]
+						.addTag("char_" + animalLookup.charAt((int) (generateRandomRuntime() * animalLookup.length())));
 				int sizeNum = (int) (generateRandomRuntime() * 4) + 1;
 				animalTL[i].addTag("size_" + generateNumberTag(sizeNum));
 				animalTL[i].addTag("ecol_" + generateNumberTag((int) (generateRandomRuntime() * 4)));
@@ -524,6 +526,8 @@ public class Map {
 				}
 			} else {
 				animalTL[i].addTag("plnt_spec");
+				animalTL[i]
+						.addTag("char_" + plantLookup.charAt((int) (generateRandomRuntime() * plantLookup.length())));
 				int sizeNum = (int) (generateRandomRuntime() * 10) + 1;
 				animalTL[i].addTag("size_" + generateNumberTag(sizeNum));
 				animalTL[i].addTag("ecol_" + generateNumberTag(((int) (generateRandomRuntime() * 11)) / 9));
@@ -638,12 +642,13 @@ public class Map {
 		double tMin = Integer.MAX_VALUE;
 		double tMax = Integer.MIN_VALUE;
 
+		// priming the insect population formula
 		for (int i = 0; i < 100; i++) {
 			generateRandomRuntime();
 		}
 
 		for (int i = 0; i < 25 * 25; i++) {
-			table[i] = (double) Map.generateRandomRuntime();
+			table[i] = (double) generateRandomRuntime();
 			if (tMin > table[i])
 				tMin = table[i];
 			if (tMax < table[i])
@@ -657,13 +662,14 @@ public class Map {
 		worldSize = (int) (generateRandomRuntime() * 15) + 1;
 		biomeSect = new Thing[worldSize];
 		setBaseMap();
-		setTrueMap();
-
+		
+		System.out.println(lookup.length());
 		generateMaterials();
 		generateBiomes();
 		System.out.println("world size of " + worldSize);
 		generateOrganisms();
 		populateOrganisms();
+		setTrueMap();
 	}
 
 	public int intClamp(int num, int min, int max) {
@@ -677,6 +683,13 @@ public class Map {
 	public void setTrueMap() {
 		for (int i = 0; i < 25 * 25; i++) {
 			trueMap[i] = baseMap[i];
+			for (int j = 0; j < lWPop.length; j++) {
+				int x = Integer.parseInt(lWPop[j].getValue("posx").substring(5));
+				int y = Integer.parseInt(lWPop[j].getValue("posy").substring(5));
+				if (x + y * 25 == i) {
+					trueMap[i] = lWPop[j].getValue("char").charAt(5);
+				}
+			}
 		}
 
 		trueMap[getPlayerPosition()] = '@';
@@ -687,18 +700,6 @@ public class Map {
 		if (position == getPlayerPosition())
 			return player;
 		return null;
-	}
-
-	public void checkStatus() {
-
-	}
-
-	public void adjustGoals() {
-
-	}
-
-	public void moveAnimals() {
-
 	}
 
 	private boolean checkOccupied(int index) {
