@@ -362,10 +362,11 @@ public class Map {
 	}
 
 	public static String generateUniqueID() {
-		String newID = generateNumberTag((int) (generateRandomRuntime() * 9999) + 1);
+		String newID = "";
 		boolean collision = true;
 		while (collision) {
 			collision = false;
+			newID = generateNumberTag((int) (generateRandomRuntime() * 9999) + 1);
 			for (int i = 0; i < unIDs.length; i++) {
 				if (unIDs[i].equals(newID)) {
 					collision = true;
