@@ -250,7 +250,6 @@ public class Map {
 					String behavior = behaviorArr[j].substring(5);
 
 					distMod = 5;
-					System.out.print(i + " size is " + size + " eco is " + eco + " behavior is " + behavior + " ");
 					if (behavior.equals("pkht")) {
 						tempPop += 4;
 
@@ -281,8 +280,7 @@ public class Map {
 						distMod -= 2;
 
 					}
-					System.out.print(tempPop + " ");
-					System.out.println();
+
 				}
 			}
 			Thing[] temp = lWPop.clone();
@@ -314,6 +312,9 @@ public class Map {
 							+ ((generateRandomRuntime() > 0.5) ? -1 : 1) * speedMod * generateRandomRuntime() * 0.1)));
 					lWPop[j].addTag("intm_" + generateNumberTag((int) (intMod
 							+ ((generateRandomRuntime() > 0.5) ? -1 : 1) * intMod * generateRandomRuntime() * 0.1)));
+					if (Integer.parseInt(lWPop[j].getValue("ecol").substring(5)) > 0) {
+						lWPop[j].addTag("food_" + lWPop[j].getValue("size").substring(5));
+					}
 				}
 				if (lWPop[j].containsTag("plnt_spec")) {
 					lWPop[j].remTag("plnt_spec");
@@ -331,10 +332,9 @@ public class Map {
 			totalPop += tempPop;
 		}
 		System.out.println();
-		System.out.println("INDIVIDUAL ANIMALS IN CURRENT BIOME(" + currBiome + ") : ");
+		System.out.println("INDIVIDUAL ANIMALS IN CURRENT BIOME(" + currBiome + ") : " + lWPop.length);
 		System.out.println();
 		updateCreatures();
-		
 	}
 
 	public static Thing getByID(String unID) {
@@ -351,9 +351,9 @@ public class Map {
 			for (int j = 0; j < lWPop.length; j++) {
 				if (j == i)
 					continue;
-				if (!lWPop[j].containsTag("posx"))
-					lWPop[j].printTags();
 				lWPop[i].buildPerception(lWPop[j]);
+				lWPop[i].updateStatus();
+				lWPop[i].generateBehavior();
 			}
 		}
 	}
@@ -401,7 +401,7 @@ public class Map {
 
 	public static void generateOrganisms() {
 
-		animalTL = new Thing[(int) (generateRandomRuntime() * 50 + 10 + worldSize * 2)];
+		animalTL = new Thing[(int) (generateRandomRuntime() * 5 * worldSize + worldSize / 2 + 1)];
 		for (int i = 0; i < animalTL.length; i++) {
 			int organicMat = (int) (generateRandomRuntime() * materialTL.length);
 
@@ -656,11 +656,11 @@ public class Map {
 			table[i] -= tMin;
 			table[i] /= (tMax - tMin);
 		}
-		
+
 		worldSize = (int) (generateRandomRuntime() * 15) + 1;
 		biomeSect = new Thing[worldSize];
 		setBaseMap();
-		
+
 		System.out.println(lookup.length());
 		generateMaterials();
 		generateBiomes();

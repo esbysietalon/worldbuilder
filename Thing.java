@@ -298,7 +298,7 @@ public class Thing {
 					if (thingEco == 1 && size > thingSize) {
 						subtext += "_" + percValues[i].substring(10, 14);
 					}
-					
+
 				}
 			}
 			break;
@@ -373,10 +373,8 @@ public class Thing {
 
 	public void generateBehavior() {
 		// food
-		findPrey();
-		if (containsTag("anim")) {
-			addTag("full_" + Integer.parseInt(getValue("size")));
-		}
+		if (containsTag("hngr"))
+			findPrey();
 		if (containsTag("pnic")) {
 
 		}
@@ -388,14 +386,15 @@ public class Thing {
 	public void updateStatus() {
 		newTL.readAndUpdate();
 		if (containsTag("anim_indv")) {
-			if (containsTag("full")) {
-				int fullness = Integer.parseInt(getValue("full"));
+			if (containsTag("feed")) {
+				int fullness = Integer.parseInt(getValue("feed").substring(5));
+				remTag("feed");
+
+				
 				if (fullness > 0) {
-					remTag("full");
-					addTag("full_" + Map.generateNumberTag(fullness - 1));
+					addTag("feed_" + Map.generateNumberTag(fullness - 1));
 				} else {
-					remTag("full");
-					addTag("hngr_" + Map.generateNumberTag(Integer.parseInt(getValue("size"))));
+					addTag("hngr_" + Map.generateNumberTag(Integer.parseInt(getValue("size").substring(5))));
 				}
 			}
 		}
