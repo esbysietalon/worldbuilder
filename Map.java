@@ -374,11 +374,22 @@ public class Map {
 		return null;
 	}
 
-	public double getSplineValue(double a, double b, double c) {
-		return 0.0;
+	private double hermiteTangentOne(double x) {
+		return x * x * x - 2 * x * x + x;
 	}
-	
-	
+
+	private double hermiteTangentTwo(double x) {
+		return x * x * x - x * x;
+	}
+
+	public double bodyLengthSpline(double a, double b, double x) {
+		return hermiteTangentOne(x) * a + hermiteTangentTwo(x) * b + 0.5 * (1 - 4 * (x - 0.5) * (x - 0.5));
+	} //-2<=a<=2 and -2<=b<=2 and 0<=x<=1
+
+	public double bodyQuarterSpline(double a, double x) {
+		return (1 - x) * (1 - x) * (1 - x) + (1 - x) * (1 - x) * x * a + (1 - x) * x * x * a;
+	} //0<=a<=3 and 0<=x<=1
+
 	public static void updateCreatures() {
 		for (int i = 0; i < lWPop.length; i++) {
 			for (int j = 0; j < lWPop.length; j++) {
@@ -532,7 +543,7 @@ public class Map {
 							&& !prereqCheck.equals("nose") && anatomyNum % 2 == 1) {
 						anatomyNum++;
 					}
-					if(prereqCheck.equals("claw")) {
+					if (prereqCheck.equals("claw")) {
 						anatomyNum = ((int) (generateRandomRuntime() * (10 * 15.0 / (complexity + sizeNum))) + 1);
 					}
 					if (prereqCheck.equals("eyes")) {
