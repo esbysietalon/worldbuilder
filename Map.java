@@ -374,6 +374,11 @@ public class Map {
 		return null;
 	}
 
+	public double getSplineValue(double a, double b, double c) {
+		return 0.0;
+	}
+	
+	
 	public static void updateCreatures() {
 		for (int i = 0; i < lWPop.length; i++) {
 			for (int j = 0; j < lWPop.length; j++) {
