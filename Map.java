@@ -255,6 +255,9 @@ public class Map {
 			int size = Integer.parseInt(localWildlife[i].getValue("size").substring(5));
 			int tempPop = (11 - size) * (2 - eco);
 			int distMod = 2;
+			if (localWildlife[i].containsTag("plnt")) {
+				tempPop *= 5;
+			}
 			if (localWildlife[i].containsTag("anim")) {
 				String[] behaviorArr = localWildlife[i].getAll("bhvr");
 				tempPop = (5 - size) * (4 - eco);
@@ -517,16 +520,21 @@ public class Map {
 
 	public static void updateCreatures() {
 		for (int i = 0; i < lWPop.length; i++) {
-			lWPop[i].removePerception();
-			for (int j = 0; j < lWPop.length; j++) {
-				if (j == i)
-					continue;
+			if (lWPop[i].containsTag("anim")) {
+				lWPop[i].removePerception();
+				for (int j = 0; j < lWPop.length; j++) {
+					if (j == i)
+						continue;
 
-				lWPop[i].buildPerception(lWPop[j]);
+					lWPop[i].buildPerception(lWPop[j]);
 
+				}
+				lWPop[i].updateStatus();
+				lWPop[i].generateBehavior();
+			} else {
+				lWPop[i].updateStatus();
 			}
-			lWPop[i].updateStatus();
-			lWPop[i].generateBehavior();
+
 		}
 	}
 
@@ -676,8 +684,8 @@ public class Map {
 					}
 					if (prereqCheck.equals("eyes")) {
 						int sightRange = (int) (generateRandomRuntime() * 100) + 1;
-						int sightResol = (int) (generateRandomRuntime() * 100) + 1;
-						int sightCone = (int) (generateRandomRuntime() * 351) + 10;
+						int sightResol = (int) (generateRandomRuntime() * 96) + 5;
+						int sightCone = (int) (generateRandomRuntime() * 171) + 10;
 
 						prereqCheck += "_rnge_" + generateNumberTag(sightRange);
 						prereqCheck += "_reso_" + generateNumberTag(sightResol);
@@ -685,7 +693,7 @@ public class Map {
 					}
 					if (prereqCheck.equals("nose")) {
 						int smellRange = (int) (generateRandomRuntime() * 200) + 1;
-						int smellResol = (int) (generateRandomRuntime() * 70) + 1;
+						int smellResol = (int) (generateRandomRuntime() * 100) + 1;
 						prereqCheck += "_rnge_" + generateNumberTag(smellRange);
 						prereqCheck += "_reso_" + generateNumberTag(smellResol);
 					}
@@ -726,6 +734,52 @@ public class Map {
 			}
 		}
 
+	}
+
+	public void generateDetailedSensory() {
+		for (int l = 0; l < lWPop.length; l++) {
+			int orie = Integer.parseInt(lWPop[l].getValue("orie").substring(5, 9));
+			int x = Integer.parseInt(lWPop[l].getValue("posx").substring(5, 9));
+			int y = Integer.parseInt(lWPop[l].getValue("posy").substring(5, 9));
+			if (lWPop[l].containsTag("eyes")) {
+				String[] eyeValues = lWPop[l].getAll("eyes");
+				for (int i = 0; i < eyeValues.length; i++) {
+					int range = Integer.parseInt(eyeValues[i].substring(10, 14));
+					int reso = Integer.parseInt(eyeValues[i].substring(20, 24));
+					int cone = Integer.parseInt(eyeValues[i].substring(30, 34));
+					for (double j = orie - cone; j < orie + cone; j += (cone * 2) / (double) reso) {
+						int n = 0;
+						double cx = x;
+						double cy = y;
+						boolean collision = false;
+						while (n < range || !collision) {
+							for (int k = 0; k < lWPop.length; k++) {
+								int thingX = Integer.parseInt(lWPop[k].getValue("posx").substring(5, 9));
+								int thingY = Integer.parseInt(lWPop[k].getValue("posy").substring(5, 9));
+								if ((int) (Math.round(cx)) == thingX && (int) (Math.round(cy)) == thingY) {
+									collision = true;
+									lWPop[i].addTag("perc_seen_" + lWPop[k].getValue("unid").substring(5) + "_"
+											+ Map.generateNumberTag(thingX) + "_" + Map.generateNumberTag(thingY));
+									break;
+								}
+							}
+							cx += Math.sin(j * Math.PI / 180);
+							cy += Math.cos(j * Math.PI / 180);
+							n++;
+						}
+					}
+				}
+			}
+			if (lWPop[l].containsTag("feel")) {
+				
+			}
+			if (lWPop[l].containsTag("ears")) {
+
+			}
+			if (lWPop[l].containsTag("nose")) {
+
+			}
+		}
 	}
 
 	public static int max(int a, int b) {
@@ -848,40 +902,19 @@ public class Map {
 			table[i] /= (tMax - tMin);
 		}
 
-		/*Thing thing = new Thing();
-		thing.addTag("0");
-		thing.addTag("1");
-		thing.addTag("2");
-		thing.addTag("3");
-		thing.addTag("4");
-		thing.addTag("5");
-		thing.addTag("6");
-		thing.addTag("7");
-		thing.addTag("8");
-		thing.addTag("9");
-		thing.addTag("10");
-		thing.addTag("11");
-		thing.addTag("12");
-		thing.addTag("13");
-		thing.addTag("14");
-		thing.addTag("15");
-		thing.addTag("16");
-		thing.addTag("17");
-		thing.addTag("18");
-		thing.addTag("19");
-		thing.addTag("20");
-		thing.addTag("21");
-		thing.addTag("22");
-		thing.addTag("23");
-		thing.addTag("24");
-		thing.addTag("25");
-		thing.addTag("26");
-		thing.addTag("27");
-		thing.addTag("28");
-		thing.addTag("29");
-		thing.printTree();
-		thing.remTagTest("3");
-		thing.printTree();*/
+		/*
+		 * Thing thing = new Thing(); thing.addTag("0"); thing.addTag("1");
+		 * thing.addTag("2"); thing.addTag("3"); thing.addTag("4"); thing.addTag("5");
+		 * thing.addTag("6"); thing.addTag("7"); thing.addTag("8"); thing.addTag("9");
+		 * thing.addTag("10"); thing.addTag("11"); thing.addTag("12");
+		 * thing.addTag("13"); thing.addTag("14"); thing.addTag("15");
+		 * thing.addTag("16"); thing.addTag("17"); thing.addTag("18");
+		 * thing.addTag("19"); thing.addTag("20"); thing.addTag("21");
+		 * thing.addTag("22"); thing.addTag("23"); thing.addTag("24");
+		 * thing.addTag("25"); thing.addTag("26"); thing.addTag("27");
+		 * thing.addTag("28"); thing.addTag("29"); thing.printTree();
+		 * thing.remTagTest("3"); thing.printTree();
+		 */
 		worldSize = (int) (generateRandomRuntime() * 15) + 1;
 		biomeConstants = new double[worldSize][5];
 		biomeSect = new Thing[worldSize];

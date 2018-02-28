@@ -32,7 +32,7 @@ public class Thing {
 
 	public void remTag(String tag) {
 		// newTL.remNode(tag);
-		//newTL.remNodeTest(tag);
+		// newTL.remNodeTest(tag);
 		remTagTest(tag);
 	}
 
@@ -195,6 +195,8 @@ public class Thing {
 		}
 	}
 
+	
+
 	public void buildPerception(Thing thing) {
 		int x = Integer.parseInt(getValue("posx").substring(5, 9));
 		int y = Integer.parseInt(getValue("posy").substring(5, 9));
@@ -210,8 +212,8 @@ public class Thing {
 				int cone = Integer.parseInt(eyeValues[i].substring(30, 34));
 				if (Map.dist(dx, dy) < range) {
 					int orie = Integer.parseInt(getValue("orie").substring(5, 9));
-					int lb = orie - cone / 2;
-					int ub = orie + cone / 2;
+					int lb = orie - cone;
+					int ub = orie + cone;
 					int angle = (int) (Math.atan2(dy, dx) / Math.PI * 180);
 					if (angle >= lb && angle <= ub) {
 						int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
