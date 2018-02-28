@@ -35,7 +35,7 @@ public class TagList {
 
 		if (node == null)
 			return;
-		
+
 		rebalanceHelper(node.getLeft());
 		rebalanceHelper(node.getRight());
 		int bf = balanceFactor(node);
@@ -57,7 +57,7 @@ public class TagList {
 				rotate("left", "left", node);
 			}
 		}
-		
+
 	}
 
 	private void rebalance() {
@@ -90,7 +90,7 @@ public class TagList {
 				rotateTest("right", "left", node);
 			}
 		}
-		
+
 	}
 
 	private void rotateTest(String dir1, String dir2, TagListNode node) {
@@ -355,7 +355,7 @@ public class TagList {
 	public void addNode(TagListNode node) {
 		placeNode(root, node);
 		rebalanceTest();
-		//rebalance();
+		// rebalance();
 	}
 
 	private String findTagHelper(TagListNode node, String tag) {
@@ -407,9 +407,141 @@ public class TagList {
 		return null;
 	}
 
+	public void remNodeNewTest(String tag) {
+		TagListNode remNode = remTestHelper(root, tag);
+		if (remNode == null) {
+			return;
+		}
+
+		if (remNode.getRight() != null) {
+			//System.out.println("check");
+			TagListNode mostLeftRightNode = remNode.getRight();
+			int n = 0;
+			while (mostLeftRightNode.getLeft() != null) {
+				mostLeftRightNode = mostLeftRightNode.getLeft();
+				n++;
+			}
+			if (remNode.getParent() != null) {
+				if (remNode.getParent().getLeft() != null
+						&& remNode.getParent().getLeft().getTag().equals(remNode.getTag())) {
+					remNode.getParent().setLeft(mostLeftRightNode);
+				} else if (remNode.getParent().getRight() != null
+						&& remNode.getParent().getRight().getTag().equals(remNode.getTag())) {
+					remNode.getParent().setRight(mostLeftRightNode);
+				}
+			} else {
+				root = mostLeftRightNode;
+			}
+			//System.out.println("value of n is " + n);
+			if (n == 0) {
+				mostLeftRightNode.getParent().setRight(mostLeftRightNode.getRight());
+				if (mostLeftRightNode.getRight() != null) {
+					mostLeftRightNode.getRight().setParent(mostLeftRightNode.getParent());
+				}
+			} else {
+				mostLeftRightNode.getParent().setLeft(mostLeftRightNode.getRight());
+				if (mostLeftRightNode.getLeft() != null) {
+					mostLeftRightNode.getLeft().setParent(mostLeftRightNode.getParent());
+				}
+			}
+			/*System.out.println("mostLeftRightNode old parent = " + mostLeftRightNode.getParent().getTag());
+			System.out.println(
+					"mostLeftRightNode old parent has left? " + (mostLeftRightNode.getParent().getLeft() != null));
+			if (mostLeftRightNode.getParent().getLeft() != null)
+				System.out.println(
+						"mostLeftRightNode old parent left = " + mostLeftRightNode.getParent().getLeft().getTag());
+			System.out.println(
+					"mostLeftRightNode old parent has right? " + (mostLeftRightNode.getParent().getRight() != null));
+			if (mostLeftRightNode.getParent().getRight() != null)
+				System.out.println(
+						"mostLeftRightNode old parent right = " + mostLeftRightNode.getParent().getRight().getTag());
+			System.out.println("mostLeftRightNode has old left? " + (mostLeftRightNode.getLeft() != null));
+			if (mostLeftRightNode.getLeft() != null) {
+				System.out.println(
+						"mostLeftRightNode old left has parent? " + (mostLeftRightNode.getLeft().getParent() != null));
+				if ((mostLeftRightNode.getLeft().getParent() != null))
+					System.out.println(
+							"mostLeftRightNode old left parent = " + mostLeftRightNode.getLeft().getParent().getTag());
+			}
+			System.out.println("mostLeftRightNode has old right? " + (mostLeftRightNode.getRight() != null));
+			if ((mostLeftRightNode.getRight() != null)) {
+				System.out.println("mostLeftRightNode old right has parent? "
+						+ (mostLeftRightNode.getRight().getParent() != null));
+				if ((mostLeftRightNode.getRight().getParent() != null))
+					System.out.println("mostLeftRightNode old right parent = "
+							+ mostLeftRightNode.getRight().getParent().getTag());
+			}*/
+			mostLeftRightNode.setParent(remNode.getParent());
+			mostLeftRightNode.setRight(remNode.getRight());
+			if (mostLeftRightNode.getRight() != null)
+				mostLeftRightNode.getRight().setParent(mostLeftRightNode);
+			mostLeftRightNode.setLeft(remNode.getLeft());
+			if (mostLeftRightNode.getLeft() != null) {
+				mostLeftRightNode.getLeft().setParent(mostLeftRightNode);
+			}
+
+			/*System.out.println("remNode is in? " + containsTag(remNode.getTag()));
+			System.out.println("mostLeftRightNode = " + mostLeftRightNode.getTag());
+			System.out.println("mostLeftRightNode parent left = " + mostLeftRightNode.getParent().getLeft().getTag());
+			System.out.println("mostLeftRightNode parent right = " + mostLeftRightNode.getParent().getRight().getTag());
+			System.out.println("mostLeftRightNode parent = " + mostLeftRightNode.getParent().getTag());
+			System.out.println("mostLeftRightNode left = " + mostLeftRightNode.getLeft().getTag());
+			System.out.println("mostLeftRightNode right = " + mostLeftRightNode.getRight().getTag());
+			System.out.println("mostLeftRightNode left parent = " + mostLeftRightNode.getLeft().getParent().getTag());
+			System.out.println("mostLeftRightNode right parent = " + mostLeftRightNode.getRight().getParent().getTag());
+			*/remNode = null;
+		} else if (remNode.getLeft() != null) {
+			TagListNode mostRightLeftNode = remNode.getLeft();
+			int n = 0;
+			while (mostRightLeftNode.getRight() != null) {
+				mostRightLeftNode = mostRightLeftNode.getRight();
+				n++;
+			}
+			if (remNode.getParent() != null) {
+				if (remNode.getParent().getLeft() != null
+						&& remNode.getParent().getLeft().getTag().equals(remNode.getTag())) {
+					remNode.getParent().setLeft(mostRightLeftNode);
+				} else if (remNode.getParent().getRight() != null
+						&& remNode.getParent().getRight().getTag().equals(remNode.getTag())) {
+					remNode.getParent().setRight(mostRightLeftNode);
+				}
+			} else {
+				root = mostRightLeftNode;
+			}
+			if (n == 0) {
+				mostRightLeftNode.getParent().setLeft(mostRightLeftNode.getLeft());
+			} else {
+				mostRightLeftNode.getParent().setRight(mostRightLeftNode.getLeft());
+			}
+			mostRightLeftNode.setParent(remNode.getParent());
+			mostRightLeftNode.setLeft(remNode.getLeft());
+			if (mostRightLeftNode.getLeft() != null)
+				mostRightLeftNode.getLeft().setParent(mostRightLeftNode);
+			mostRightLeftNode.setRight(remNode.getRight());
+			if (mostRightLeftNode.getRight() != null) {
+				mostRightLeftNode.getRight().setParent(mostRightLeftNode);
+			}
+			remNode = null;
+		} else {
+			if (remNode.getParent() != null) {
+				if (remNode.getParent().getLeft() != null
+						&& remNode.getParent().getLeft().getTag().equals(remNode.getTag())) {
+					remNode.getParent().setLeft(null);
+				} else if (remNode.getParent().getRight() != null
+						&& remNode.getParent().getRight().getTag().equals(remNode.getTag())) {
+					remNode.getParent().setRight(null);
+				}
+			} else {
+				root = null;
+			}
+		}
+		rebalanceTest();
+	}
+
 	public void remNodeTest(String tag) {
 		TagListNode remNode = remTestHelper(root, tag);
-
+		if (tag.equals("spdm") && containsTag("nose_rnge_0199_reso_0002_0001_sgmt_very"))
+			System.out.println(remNode.getTag());
 		if (remNode == null) {
 			return;
 		}
@@ -461,10 +593,12 @@ public class TagList {
 				}
 			}
 		} else {
-
+			if (tag.equals("spdm") && containsTag("nose_rnge_0199_reso_0002_0001_sgmt_very"))
+				System.out.println("bf >= 0 " + balanceFactor(remNode));
 			TagListNode parent = remNode.getParent();
 			if (parent != null) {
-
+				if (tag.equals("spdm") && containsTag("nose_rnge_0199_reso_0002_0001_sgmt_very"))
+					System.out.println("non-null parent");
 				if (parent.getLeft() != null && parent.getLeft().getTag().equals(remNode.getTag())) {
 					parent.setLeft(remNode.getRight());
 
@@ -485,23 +619,50 @@ public class TagList {
 				}
 				if (parent.getRight() != null && parent.getRight().getTag().equals(remNode.getTag())) {
 
-					parent.setRight(remNode.getRight());
+					if (tag.equals("spdm") && containsTag("nose_rnge_0199_reso_0002_0001_sgmt_very"))
+						System.out.println("parent right " + (remNode.getRight() != null));
 
 					if (remNode.getRight() != null) {
+
+						if (tag.equals("spdm") && containsTag("nose_rnge_0199_reso_0002_0001_sgmt_very"))
+							System.out.println("has right " + (remNode.getRight() != null));
 						remNode.getRight().setParent(parent);
 						if (remNode.getLeft() != null) {
+
+							// yup
+
+							/*
+							 * TagListNode mostLeftRightNode = remNode.getRight();
+							 * 
+							 * int n = 0; while (mostLeftRightNode.getLeft() != null) { mostLeftRightNode =
+							 * mostLeftRightNode.getLeft(); n++; } if (n == 0) {
+							 * mostLeftRightNode.getParent().setRight(mostLeftRightNode.getRight()); if
+							 * (mostLeftRightNode.getRight() != null) {
+							 * mostLeftRightNode.getRight().setParent(mostLeftRightNode.getParent()); } }
+							 * else { mostLeftRightNode.getParent().setLeft(mostLeftRightNode.getRight());
+							 * if (mostLeftRightNode.getRight() != null) {
+							 * mostLeftRightNode.getRight().setParent(mostLeftRightNode.getParent()); } }
+							 * TagListNode remNodeLeft = remNode.getLeft(); TagListNode remNodeRight =
+							 * remNode.getRight(); remNode.getParent().setRight(mostLeftRightNode);
+							 * mostLeftRightNode.setParent(remNode.getParent());
+							 * mostLeftRightNode.setLeft(remNodeLeft); if (remNodeLeft != null)
+							 * remNodeLeft.setParent(mostLeftRightNode);
+							 * mostLeftRightNode.setRight(remNodeRight); if (remNodeRight != null)
+							 * remNodeRight.setParent(mostLeftRightNode);
+							 */
 
 							remNode.getLeft().setRight(remNode.getRight().getLeft());
 							remNode.getRight().setLeft(remNode.getLeft());
 							remNode.getLeft().setParent(remNode.getRight());
+
 						}
 					} else {
-
 						if (remNode.getParent() != null)
 							remNode.getParent().setRight(null);
 						remNode.setParent(null);
-
+						parent.setRight(remNode.getRight());
 					}
+
 				}
 			} else {
 
@@ -521,9 +682,8 @@ public class TagList {
 				}
 			}
 		}
-
-		 rebalanceTest();
-		//rebalance();
+		rebalanceTest();
+		// rebalance();
 	}
 
 	private void copyTreeHelper(Thing thing, TagListNode node) {
@@ -542,8 +702,14 @@ public class TagList {
 		if (node == null) {
 			return null;
 		}
-		if (node.getTag().contains(tag)) {
-			return node;
+		if (tag.length() == 4) {
+			if (node.getTag().substring(0, 4).equals(tag)) {
+				return node;
+			}
+		} else {
+			if (node.getTag().equals(tag)) {
+				return node;
+			}
 		}
 		if (Thing.compareAlphaValue(node.getTag(), tag) > 0) {
 			if (node.getLeft() != null)

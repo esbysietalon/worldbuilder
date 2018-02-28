@@ -32,7 +32,8 @@ public class Thing {
 
 	public void remTag(String tag) {
 		// newTL.remNode(tag);
-		newTL.remNodeTest(tag);
+		//newTL.remNodeTest(tag);
+		remTagTest(tag);
 	}
 
 	public String getValue(String tag) {
@@ -187,6 +188,13 @@ public class Thing {
 		return tagList;
 	}
 
+	public void removePerception() {
+		int lngth = getAll("perc").length;
+		for (int i = 0; i < lngth; i++) {
+			remTag("perc");
+		}
+	}
+
 	public void buildPerception(Thing thing) {
 		int x = Integer.parseInt(getValue("posx").substring(5, 9));
 		int y = Integer.parseInt(getValue("posy").substring(5, 9));
@@ -274,6 +282,10 @@ public class Thing {
 
 	public String[] getAll(String tag) {
 		return newTL.findAll(tag);
+	}
+
+	public void remTagTest(String tag) {
+		newTL.remNodeNewTest(tag);
 	}
 
 	private void findPrey() {
@@ -390,7 +402,6 @@ public class Thing {
 				int fullness = Integer.parseInt(getValue("feed").substring(5));
 				remTag("feed");
 
-				
 				if (fullness > 0) {
 					addTag("feed_" + Map.generateNumberTag(fullness - 1));
 				} else {

@@ -58,6 +58,7 @@ public class Map {
 	public final String lookup = "!@#$%^&*()-=~`\\\'\"+_<>,.?/;:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	public final static String plantLookup = "XAVWOUMYTH";
 	public final static String animalLookup = ">PRFKLD})S";
+	private double currRandom = 0;
 	private static int counter = 0;
 	private static double cc = 0;
 	private static double seedVal1 = 0;
@@ -108,6 +109,9 @@ public class Map {
 	public Thing[] plantPop = new Thing[0];
 
 	public static int currBiome = -1;
+
+	private static double[] currTerrain;
+	private static double[][] biomeConstants;
 
 	public static String generateNumberTag(int num) {
 		String output = "0000";
@@ -219,6 +223,14 @@ public class Map {
 		for (int i = 0; i < biomeSect.length; i++) {
 			biomeSect[i].printTags();
 		}
+		for (int i = 0; i < biomeSect.length; i++) {
+			biomeConstants[i][0] = generateRandomRuntime();
+			biomeConstants[i][1] = generateRandomRuntime();
+			biomeConstants[i][2] = generateRandomRuntime();
+			biomeConstants[i][3] = generateRandomRuntime();
+			biomeConstants[i][4] = generateRandomRuntime();
+		}
+
 		currBiome = (int) (generateRandomRuntime() * worldSize);
 		System.out.println();
 		System.out.println("current biome is ");
@@ -298,10 +310,15 @@ public class Map {
 					int strengthMod = Integer.parseInt(lWPop[j].getValue("strm").substring(5));
 					int speedMod = Integer.parseInt(lWPop[j].getValue("spdm").substring(5));
 					int intMod = Integer.parseInt(lWPop[j].getValue("intm").substring(5));
-					lWPop[j].remTag("stam");
-					lWPop[j].remTag("strm");
-					lWPop[j].remTag("spdm");
-					lWPop[j].remTag("intm");
+					if (lWPop[j].containsTag("stam"))
+						lWPop[j].remTag("stam");
+					if (lWPop[j].containsTag("strm"))
+						lWPop[j].remTag("strm");
+
+					if (lWPop[j].containsTag("intm"))
+						lWPop[j].remTag("intm");
+					if (lWPop[j].containsTag("spdm"))
+						lWPop[j].remTag("spdm");
 					lWPop[j].addTag(
 							"stam_" + generateNumberTag((int) (staminaMod + ((generateRandomRuntime() > 0.5) ? -1 : 1)
 									* staminaMod * generateRandomRuntime() * 0.1)));
@@ -313,6 +330,7 @@ public class Map {
 					lWPop[j].addTag("intm_" + generateNumberTag((int) (intMod
 							+ ((generateRandomRuntime() > 0.5) ? -1 : 1) * intMod * generateRandomRuntime() * 0.1)));
 					if (Integer.parseInt(lWPop[j].getValue("ecol").substring(5)) > 0) {
+
 						lWPop[j].addTag("food_" + lWPop[j].getValue("size").substring(5));
 					}
 				}
@@ -384,23 +402,131 @@ public class Map {
 
 	public double bodyLengthSpline(double a, double b, double x) {
 		return hermiteTangentOne(x) * a + hermiteTangentTwo(x) * b + 0.5 * (1 - 4 * (x - 0.5) * (x - 0.5));
-	} //-2<=a<=2 and -2<=b<=2 and 0<=x<=1
+	} // -2<=a<=2 and -2<=b<=2 and 0<=x<=1
 
 	public double bodyQuarterSpline(double a, double x) {
 		return (1 - x) * (1 - x) * (1 - x) + (1 - x) * (1 - x) * x * a + (1 - x) * x * x * a;
-	} //0<=a<=3 and 0<=x<=1
+	} // 0<=a<=3 and 0<=x<=1
+
+	// DSQ-algorithm here
+	private void diamondSquare() {
+		currTerrain = new double[25 * 25];
+		currTerrain[0] = biomeConstants[currBiome][0];
+		currTerrain[24] = biomeConstants[currBiome][1];
+		currTerrain[24 * 25] = biomeConstants[currBiome][2];
+		currTerrain[25 * 25 - 1] = biomeConstants[currBiome][3];
+		currRandom = biomeConstants[currBiome][4];
+		doDiamond(0, 24, 24 * 25, 25 * 25 - 1, 1);
+
+		double max = 0;
+		double min = 100;
+		for (int i = 0; i < 25 * 25; i++) {
+			if (max < currTerrain[i])
+				max = currTerrain[i];
+			if (min > currTerrain[i])
+				min = currTerrain[i];
+		}
+		for (int i = 0; i < 25 * 25; i++) {
+			currTerrain[i] -= min;
+			currTerrain[i] /= (max - min);
+		}
+		for (int i = 0; i < 25 * 25; i++) {
+			double avg = currTerrain[i] * 0.2;
+			int count = 1;
+			if (i > 0) {
+				count++;
+				avg += currTerrain[i - 1] * 0.1;
+				if (i > 23) {
+					count++;
+					avg += currTerrain[i - 25 + 1] * 0.1;
+					if (i > 24) {
+						count++;
+						avg += currTerrain[i - 25] * 0.1;
+						if (i > 25) {
+							count++;
+							avg += currTerrain[i - 1 - 25] * 0.1;
+						}
+
+					}
+				}
+			}
+			if (i < 25 * 25 - 1) {
+				count++;
+				avg += currTerrain[i + 1] * 0.1;
+				if (i < 24 * 25) {
+					count++;
+					avg += currTerrain[i + 25 - 1] * 0.1;
+					if (i < 24 * 25 - 1) {
+						count++;
+						avg += currTerrain[i + 25] * 0.1;
+						if (i < 24 * 25 - 2) {
+							count++;
+							avg += currTerrain[i + 25 + 1] * 0.1;
+						}
+					}
+				}
+			}
+			table[i] = avg;
+		}
+	}
+
+	private void doDiamond(int h, int i, int j, int k, int n) {
+
+		currTerrain[(h - h / 25 * 25 + i - i / 25 * 25) / 2
+				+ (h / 25 + j / 25) / 2 * 25] = (currTerrain[h] + currTerrain[i] + currTerrain[j] + currTerrain[k]) / 4
+						+ generateRandomIsolated(currRandom) * 2 / (n * 1) - 1.0 / (n * 1);
+
+		currRandom = generateRandomIsolated(currRandom);
+		doSquare((h - h / 25 * 25 + i - i / 25 * 25) / 2 + (h / 25 + j / 25) / 2 * 25, n + 1);
+
+	}
+
+	private void doSquare(int index, int n) {
+
+		int y = index / 25 * 25;
+		int x = index - index / 25 * 25;
+		int dx = (int) (25 / Math.pow(2, n - 1));
+		int dy = dx * 25;
+		if (dx == 0 || dy == 0)
+			return;
+		currTerrain[x - dx + y - dy] = currTerrain[index] + generateRandomIsolated(currRandom) * 2 / (n * 1)
+				- 1.0 / (n * 1);
+		currRandom = generateRandomIsolated(currRandom);
+		currTerrain[x + y - dy] = currTerrain[index] + generateRandomIsolated(currRandom) * 2 / (n * 1) - 1.0 / (n * 1);
+		currRandom = generateRandomIsolated(currRandom);
+		currTerrain[x - dx + y] = currTerrain[index] + generateRandomIsolated(currRandom) * 2 / (n * 1) - 1.0 / (n * 1);
+		currRandom = generateRandomIsolated(currRandom);
+		doDiamond(x - dx + y - dy, x + y - dy, x - dx + y, x + y, n);
+		currTerrain[x + dx + y - dy] = currTerrain[index] + generateRandomIsolated(currRandom) * 2 / (n * 1)
+				- 1.0 / (n * 1);
+		currRandom = generateRandomIsolated(currRandom);
+		currTerrain[x + dx + y] = currTerrain[index] + generateRandomIsolated(currRandom) * 2 / (n * 1) - 1.0 / (n * 1);
+		currRandom = generateRandomIsolated(currRandom);
+		doDiamond(x + y - dy, x + dx + y - dy, x + y, x + dx + y, n);
+		currTerrain[x - dx + y - dy] = currTerrain[index] + generateRandomIsolated(currRandom) * 2 / (n * 1)
+				- 1.0 / (n * 1);
+		currRandom = generateRandomIsolated(currRandom);
+		currTerrain[x + y + dy] = currTerrain[index] + generateRandomIsolated(currRandom) * 2 / (n * 1) - 1.0 / (n * 1);
+		currRandom = generateRandomIsolated(currRandom);
+		doDiamond(x - dx + y, x + y, x - dx + y + dy, x + y + dy, n);
+		currTerrain[x + dx + y + dy] = currTerrain[index] + generateRandomIsolated(currRandom) * 2 / (n * 1)
+				- 1.0 / (n * 1);
+		currRandom = generateRandomIsolated(currRandom);
+		doDiamond(x + y, x + dx + y, x + y + dy, x + dx + y + dy, n);
+	}
 
 	public static void updateCreatures() {
 		for (int i = 0; i < lWPop.length; i++) {
+			lWPop[i].removePerception();
 			for (int j = 0; j < lWPop.length; j++) {
 				if (j == i)
 					continue;
-				if (lWPop[i].containsTag("anim"))
-					lWPop[i].printTags();
+
 				lWPop[i].buildPerception(lWPop[j]);
-				lWPop[i].updateStatus();
-				lWPop[i].generateBehavior();
+
 			}
+			lWPop[i].updateStatus();
+			lWPop[i].generateBehavior();
 		}
 	}
 
@@ -536,8 +662,10 @@ public class Map {
 
 					if (prereqCheck.equals("nose") || prereqCheck.equals("eyes") || prereqCheck.equals("ears")
 							|| prereqCheck.equals("feel")) {
-						anatomyNum++;
 						anatomyNum /= 4;
+						if (anatomyNum == 0) {
+							anatomyNum++;
+						}
 					}
 					if (!prereqCheck.equals("claw") && !prereqCheck.equals("tetl") && !prereqCheck.equals("tetn")
 							&& !prereqCheck.equals("nose") && anatomyNum % 2 == 1) {
@@ -615,6 +743,12 @@ public class Map {
 		result = (1000 * cc / (Math.pow(1 + cc, 8))) % 1.0;
 		cc = result;
 		return result;
+	}
+
+	public static double generateRandomIsolated(double initial) {
+		// this method uses an insect population model, with coefficients adjusted to
+		// put the model into chaos
+		return (1000 * initial / (Math.pow(1 + initial, 8))) % 1.0;
 	}
 
 	public int findInLookup(char a) {
@@ -714,17 +848,54 @@ public class Map {
 			table[i] /= (tMax - tMin);
 		}
 
+		/*Thing thing = new Thing();
+		thing.addTag("0");
+		thing.addTag("1");
+		thing.addTag("2");
+		thing.addTag("3");
+		thing.addTag("4");
+		thing.addTag("5");
+		thing.addTag("6");
+		thing.addTag("7");
+		thing.addTag("8");
+		thing.addTag("9");
+		thing.addTag("10");
+		thing.addTag("11");
+		thing.addTag("12");
+		thing.addTag("13");
+		thing.addTag("14");
+		thing.addTag("15");
+		thing.addTag("16");
+		thing.addTag("17");
+		thing.addTag("18");
+		thing.addTag("19");
+		thing.addTag("20");
+		thing.addTag("21");
+		thing.addTag("22");
+		thing.addTag("23");
+		thing.addTag("24");
+		thing.addTag("25");
+		thing.addTag("26");
+		thing.addTag("27");
+		thing.addTag("28");
+		thing.addTag("29");
+		thing.printTree();
+		thing.remTagTest("3");
+		thing.printTree();*/
 		worldSize = (int) (generateRandomRuntime() * 15) + 1;
+		biomeConstants = new double[worldSize][5];
 		biomeSect = new Thing[worldSize];
-		setBaseMap();
-
-		System.out.println(lookup.length());
 		generateMaterials();
 		generateBiomes();
+		diamondSquare();
+		setBaseMap();
+
 		System.out.println("world size of " + worldSize);
 		generateOrganisms();
 		populateOrganisms();
+
 		setTrueMap();
+
 	}
 
 	public int intClamp(int num, int min, int max) {
@@ -805,15 +976,15 @@ public class Map {
 	}
 
 	public boolean getRock(double val) {
-		return (val <= 0.05);
+		return (val <= 0.25);
 	}
 
 	public boolean getSand(double val) {
-		return (val <= 0.4);
+		return (val <= 0.50);
 	}
 
 	public boolean getSoil(double val) {
-		return (val <= 0.85);
+		return (val <= 0.75);
 	}
 
 	public void setBaseMap() {
