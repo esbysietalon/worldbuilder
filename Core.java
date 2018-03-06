@@ -20,6 +20,7 @@ public class Core {
 			map.updateCreatures();
 			scn.nextLine();
 			map.setTrueMap();
+			//map.setPerspecMap();
 			System.out.println(map);
 		}
 	}

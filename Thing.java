@@ -195,8 +195,6 @@ public class Thing {
 		}
 	}
 
-	
-
 	public void buildPerception(Thing thing) {
 		int x = Integer.parseInt(getValue("posx").substring(5, 9));
 		int y = Integer.parseInt(getValue("posy").substring(5, 9));
@@ -287,26 +285,7 @@ public class Thing {
 	}
 
 	public void remTagTest(String tag) {
-		newTL.remNodeNewTest(tag);		
-	}
-
-
-	
-
-	public void updateStatus() {
-		newTL.readAndUpdate();
-		if (containsTag("anim_indv")) {
-			if (containsTag("feed")) {
-				int fullness = Integer.parseInt(getValue("feed").substring(5));
-				remTag("feed");
-
-				if (fullness > 0) {
-					addTag("feed_" + Map.generateNumberTag(fullness - 1));
-				} else {
-					addTag("hngr_" + Map.generateNumberTag(Integer.parseInt(getValue("size").substring(5))));
-				}
-			}
-		}
+		newTL.remNodeNewTest(tag);
 	}
 
 	public boolean containsTag(String tag) {

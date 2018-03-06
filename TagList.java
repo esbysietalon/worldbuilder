@@ -641,22 +641,6 @@ public class TagList {
 		}
 	}
 
-	public void readAndUpdate() {
-		if (containsTag("move")) {
-			int x = Integer.parseInt(findTag("posx").substring(5));
-			int y = Integer.parseInt(findTag("posy").substring(5));
-			x += Integer.parseInt(findTag("move").substring(5, 9));
-			y += Integer.parseInt(findTag("move").substring(10));
-
-			remNodeNewTest("posx");
-			remNodeNewTest("posy");
-			remNodeNewTest("move");
-
-			addNode(new TagListNode("posx_" + Map.generateNumberTag(x)));
-			addNode(new TagListNode("posy_" + Map.generateNumberTag(y)));
-		}
-	}
-
 	private boolean containsTagHelper(TagListNode node, String tag) {
 		if (node == null) {
 			return false;
