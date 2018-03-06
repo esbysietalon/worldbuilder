@@ -17,7 +17,7 @@ public class Core {
 		System.out.println(map);
 		while (!gameOver()) {
 			map.movePlayer(scn.next());
-
+			map.updateCreatures();
 			scn.nextLine();
 			map.setTrueMap();
 			System.out.println(map);

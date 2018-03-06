@@ -1,7 +1,7 @@
 package ascii;
 
 public class Map {
-	private double[] table = new double[25 * 25];
+	private static double[] table = new double[25 * 25];
 	private char[] baseMap = new char[25 * 25];
 	private char[] trueMap = new char[25 * 25];
 
@@ -79,8 +79,9 @@ public class Map {
 	public static String[] habitatTL = { "mtan", "arct", "tund", "dsrt", "trop", "sava", "lake", "rivr", "ocea", "deep",
 			"shal" };
 	public static String[] behaviorTL = { "pkht", "usoc", "noma", "lone", "nbld", "faml", "ambu", "deco", "danc",
-			"sing", "terr", "farm" }; // behavioural nbld is nestbuilding, noma is nomadic, usoc is eusocial, pkht is
-										// packhunting, terr is territorial
+			"sing", "terr", "farm", "cnbl" }; // behavioural nbld is nestbuilding, noma is nomadic, usoc is eusocial,
+												// pkht is
+	// packhunting, terr is territorial
 
 	// traits
 	public static String[] mindTL = { "reas", "tool", "algn", "pers", "tele", "psio" }; // arranged from least int req
@@ -238,6 +239,12 @@ public class Map {
 		System.out.println();
 	}
 
+	public static void generateBehavior() {
+		for (int i = 0; i < lWPop.length; i++) {
+
+		}
+	}
+
 	public static void populateOrganisms() {
 		localWildlife = new Thing[0];
 		lWPop = new Thing[0];
@@ -309,6 +316,13 @@ public class Map {
 				if (lWPop[j].containsTag("anim_spec")) {
 					lWPop[j].remTag("anim_spec");
 					lWPop[j].addTag("anim_indv");
+					int origSize = Integer.parseInt(lWPop[j].getValue("size").substring(5, 9));
+					if (origSize > 1) {
+						origSize += (generateRandomRuntime() > 0.5) ? 0 : -1;
+					}
+					lWPop[j].remTag("size");
+					lWPop[j].addTag("size_" + generateNumberTag(origSize));
+					lWPop[j].addTag("feed_" + lWPop[j].getValue("size").substring(5));
 					int staminaMod = Integer.parseInt(lWPop[j].getValue("stam").substring(5));
 					int strengthMod = Integer.parseInt(lWPop[j].getValue("strm").substring(5));
 					int speedMod = Integer.parseInt(lWPop[j].getValue("spdm").substring(5));
@@ -341,12 +355,29 @@ public class Map {
 					lWPop[j].remTag("plnt_spec");
 					lWPop[j].addTag("plnt_indv");
 				}
+				while (randX >= 25 || randX < 0) {
+					while (randX >= 25) {
+						randX -= 2 * ((int) (generateRandomRuntime() * distMod / 2.0) + distMod / 2.0);
+					}
+					while (randX < 0) {
+						randX += 2 * ((int) (generateRandomRuntime() * distMod / 2.0) + distMod / 2.0);
+					}
+				}
+				while (randY >= 25 || randY < 0) {
+					while (randY >= 25) {
+						randY -= 2 * ((int) (generateRandomRuntime() * distMod / 2.0) + distMod / 2.0);
+					}
+					while (randY < 0) {
+						randY += 2 * ((int) (generateRandomRuntime() * distMod / 2.0) + distMod / 2.0);
+					}
+				}
 				lWPop[j].addTag("posx_" + generateNumberTag(randX));
 				lWPop[j].addTag("posy_" + generateNumberTag(randY));
 				randX += (generateRandomRuntime() > 0.5) ? -1
-						: 1 * ((int) (generateRandomRuntime() * distMod / 2) + distMod / 2);
+						: 1 * ((int) (generateRandomRuntime() * distMod / 2.0) + distMod / 2.0);
 				randY += (generateRandomRuntime() > 0.5) ? -1
-						: 1 * ((int) (generateRandomRuntime() * distMod / 2) + distMod / 2);
+						: 1 * ((int) (generateRandomRuntime() * distMod / 2.0) + distMod / 2.0);
+
 				lWPop[j].addTag("orie_" + generateNumberTag((int) (generateRandomRuntime() * 360) + 1));
 				lWPop[j].addTag("unid_" + generateUniqueID());
 			}
@@ -360,7 +391,7 @@ public class Map {
 
 	// transformative functions on generateRandomRuntime(), useful for cases that
 	// require
-	// randomness but not linear randomness
+	// randomness but not uniformly distributed randomness
 	public static double generateRandomQuintic() {
 		double x = generateRandomRuntime() - 0.5;
 		return 16 * (x * x * x * x * x) + 0.5;
@@ -518,23 +549,154 @@ public class Map {
 		doDiamond(x + y, x + dx + y, x + y + dy, x + dx + y + dy, n);
 	}
 
-	public static void updateCreatures() {
+	public static void secondUpdate() {
+		secondDetailedSensory();
+		generatePreyItems();
 		for (int i = 0; i < lWPop.length; i++) {
 			if (lWPop[i].containsTag("anim")) {
-				lWPop[i].removePerception();
-				for (int j = 0; j < lWPop.length; j++) {
-					if (j == i)
-						continue;
-
-					lWPop[i].buildPerception(lWPop[j]);
-
-				}
+				lWPop[i].printTags();
 				lWPop[i].updateStatus();
-				lWPop[i].generateBehavior();
 			} else {
 				lWPop[i].updateStatus();
 			}
 
+		}
+	}
+
+	public static void updateCreatures() {
+		generateDetailedSensory();
+		generatePreyItems();
+		for (int i = 0; i < lWPop.length; i++) {
+			if (lWPop[i].containsTag("anim")) {
+				lWPop[i].printTags();
+				lWPop[i].updateStatus();
+			} else {
+				lWPop[i].updateStatus();
+			}
+
+		}
+	}
+
+	public static void generatePreyItems() {
+		for (int j = 0; j < lWPop.length; j++) {
+			int preyLength = lWPop[j].getAll("prey").length;
+			for (int k = 0; k < preyLength; k++) {
+				lWPop[j].remTag("prey");
+			}
+			int eco = Integer.parseInt(lWPop[j].getValue("ecol").substring(5));
+			String[] percValues;
+			switch (eco) {
+			case 0:
+				if (lWPop[j].containsTag("cnbl")) {
+					percValues = lWPop[j].getAll("perc");
+					for (int i = 0; i < percValues.length; i++) {
+						Thing thing = Map.getByID(percValues[i].substring(10, 14));
+						if (thing.getValue("spec").equals(lWPop[j].getValue("spec"))) {
+							lWPop[j].addTag("prey_" + percValues[i].substring(10, 14));
+							continue;
+						}
+					}
+				}
+				break;
+			case 1:
+				percValues = lWPop[j].getAll("perc"); // 0123456789 -- 10 11 12 13 -- (10, 14)
+				for (int i = 0; i < percValues.length; i++) {
+
+					Thing thing = Map.getByID(percValues[i].substring(10, 14));
+					if (lWPop[j].containsTag("cnbl")) {
+						if (thing.getValue("spec").equals(lWPop[j].getValue("spec"))) {
+							lWPop[j].addTag("prey_" + percValues[i].substring(10, 14));
+							continue;
+						}
+					}
+					if (thing.containsTag("plnt")) {
+						int size = Integer.parseInt(lWPop[j].getValue("size").substring(5));
+						int thingEco = Integer.parseInt(lWPop[j].getValue("ecol").substring(5));
+						int thingSize = Integer.parseInt(thing.getValue("size").substring(5));
+						if (!thing.getValue("spec").equals(lWPop[j].getValue("spec")) || lWPop[j].containsTag("cnbl")) {
+							if (thingEco == 0) {
+								lWPop[j].addTag("prey_" + percValues[i].substring(10, 14));
+								continue;
+							}
+
+						}
+					}
+				}
+				break;
+
+			case 2:
+				percValues = lWPop[j].getAll("perc"); // 0123456789 -- 10 11 12 13 -- (10, 14)
+				for (int i = 0; i < percValues.length; i++) {
+
+					Thing thing = Map.getByID(percValues[i].substring(10, 14));
+					int size = Integer.parseInt(lWPop[j].getValue("size").substring(5));
+					int thingEco = Integer.parseInt(lWPop[j].getValue("ecol").substring(5));
+					int thingSize = Integer.parseInt(thing.getValue("size").substring(5));
+					int strMod = Integer.parseInt(lWPop[j].getValue("strm").substring(5));
+					int spdMod = Integer.parseInt(lWPop[j].getValue("spdm").substring(5));
+					int intMod = Integer.parseInt(lWPop[j].getValue("intm").substring(5));
+					int tStrMod = Integer.parseInt(thing.getValue("strm").substring(5));
+					int tSpdMod = Integer.parseInt(thing.getValue("spdm").substring(5));
+
+					int sizeMod = 1;
+					if (!thing.getValue("spec").equals(lWPop[j].getValue("spec")) || lWPop[j].containsTag("cnbl")) {
+						if (thingEco != 0) {
+
+							if (lWPop[j].containsTag("pkht")) {
+								sizeMod += 0.5 * (intMod / 100.0);
+							}
+
+							if (size * sizeMod * strMod > thingSize * tStrMod
+									&& (lWPop[j].containsTag("ambu") || spdMod > tSpdMod)) {
+								lWPop[j].addTag("prey_" + percValues[i].substring(10, 14));
+							}
+						}
+					}
+
+				}
+				break;
+
+			case 3:
+				percValues = lWPop[j].getAll("perc"); // 0123456789 -- 10 11 12 13 -- (10, 14)
+				for (int i = 0; i < percValues.length; i++) {
+
+					Thing thing = Map.getByID(percValues[i].substring(10, 14));
+
+					int size = Integer.parseInt(lWPop[j].getValue("size").substring(5));
+					int thingEco = Integer.parseInt(lWPop[j].getValue("ecol").substring(5));
+					int thingSize = Integer.parseInt(thing.getValue("size").substring(5));
+					if (!thing.getValue("spec").equals(lWPop[j].getValue("spec")) || lWPop[j].containsTag("cnbl")) {
+						if (thingEco == 0) {
+							lWPop[j].addTag("prey_" + percValues[i].substring(10, 14));
+							continue;
+						} else {
+							int strMod = Integer.parseInt(lWPop[j].getValue("strm").substring(5));
+							int spdMod = Integer.parseInt(lWPop[j].getValue("spdm").substring(5));
+							int intMod = Integer.parseInt(lWPop[j].getValue("intm").substring(5));
+							int tStrMod = Integer.parseInt(thing.getValue("strm").substring(5));
+							int tSpdMod = Integer.parseInt(thing.getValue("spdm").substring(5));
+							int sizeMod = 1;
+
+							if (lWPop[j].containsTag("pkht")) {
+								sizeMod += 0.5 * (intMod / 100.0);
+							}
+
+							if (size * sizeMod * strMod > thingSize * tStrMod
+									&& (lWPop[j].containsTag("ambu") || spdMod > tSpdMod)) {
+								lWPop[j].addTag("prey_" + percValues[i].substring(10, 14));
+								continue;
+							}
+
+						}
+					}
+				}
+				break;
+
+			default:
+
+				break;
+
+			}
 		}
 	}
 
@@ -616,6 +778,7 @@ public class Map {
 
 			if (generateRandomRuntime() > 0.5) {
 				animalTL[i].addTag("anim_spec");
+				animalTL[i].addTag("spec_" + generateUniqueID());
 				animalTL[i]
 						.addTag("char_" + animalLookup.charAt((int) (generateRandomRuntime() * animalLookup.length())));
 				int sizeNum = (int) (generateRandomRuntime() * 4) + 1;
@@ -642,7 +805,8 @@ public class Map {
 					while (prereqCheck.equals("lone") && animalTL[i].containsTag("usoc")) {
 						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
 					}
-					animalTL[i].addTag("bhvr_" + behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)]);
+					animalTL[i].addTag("bhvr_" + behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)] + "_"
+							+ generateQualityModTag());
 				}
 				// need to contextualize - placement - shape - symmetry
 				for (int j = 0; j < complexity; j++) {
@@ -684,7 +848,7 @@ public class Map {
 					}
 					if (prereqCheck.equals("eyes")) {
 						int sightRange = (int) (generateRandomRuntime() * 100) + 1;
-						int sightResol = (int) (generateRandomRuntime() * 96) + 5;
+						int sightResol = (int) (generateRandomRuntime() * 76) + 25;
 						int sightCone = (int) (generateRandomRuntime() * 171) + 10;
 
 						prereqCheck += "_rnge_" + generateNumberTag(sightRange);
@@ -717,6 +881,7 @@ public class Map {
 				}
 			} else {
 				animalTL[i].addTag("plnt_spec");
+				animalTL[i].addTag("spec_" + generateUniqueID());
 				animalTL[i]
 						.addTag("char_" + plantLookup.charAt((int) (generateRandomRuntime() * plantLookup.length())));
 				int sizeNum = (int) (generateRandomRuntime() * 10) + 1;
@@ -736,48 +901,438 @@ public class Map {
 
 	}
 
-	public void generateDetailedSensory() {
-		for (int l = 0; l < lWPop.length; l++) {
-			int orie = Integer.parseInt(lWPop[l].getValue("orie").substring(5, 9));
-			int x = Integer.parseInt(lWPop[l].getValue("posx").substring(5, 9));
-			int y = Integer.parseInt(lWPop[l].getValue("posy").substring(5, 9));
-			if (lWPop[l].containsTag("eyes")) {
-				String[] eyeValues = lWPop[l].getAll("eyes");
+	public static void secondDetailedSensory() {
+		for (int g = 0; g < lWPop.length; g++) {
+			int m = 0;
+			int percLength = lWPop[g].getAll("perc").length;
+			System.out.println();
+			System.out.println("START secondDetailedSensory");
+			System.out.println(percLength);
+			lWPop[g].printTags();
+			while (lWPop[g].containsTag("perc")) {
+				percLength = lWPop[g].getAll("perc").length;
+				System.out.println(percLength + " - percLength");
+				lWPop[g].remTag("perc");
+			}
+			percLength = lWPop[g].getAll("perc").length;
+			System.out.println(percLength);
+			lWPop[g].printTags();
+			System.out.println("END");
+			int x = Integer.parseInt(lWPop[g].getValue("posx").substring(5, 9));
+			int y = Integer.parseInt(lWPop[g].getValue("posy").substring(5, 9));
+			double z = table[x + y * 25];
+			if (lWPop[g].containsTag("eyes")) {
+				String[] eyeValues = lWPop[g].getAll("eyes");
 				for (int i = 0; i < eyeValues.length; i++) {
 					int range = Integer.parseInt(eyeValues[i].substring(10, 14));
 					int reso = Integer.parseInt(eyeValues[i].substring(20, 24));
 					int cone = Integer.parseInt(eyeValues[i].substring(30, 34));
-					for (double j = orie - cone; j < orie + cone; j += (cone * 2) / (double) reso) {
+					// double[] angles = new double[0];
+					double[][] newThings = new double[0][0];
+					// Thing[] things = new Thing[0];
+					for (int j = 0; j < lWPop.length; j++) {
+						if (j == g)
+							continue;
+						int thingX = Integer.parseInt(lWPop[j].getValue("posx").substring(5, 9));
+						int thingY = Integer.parseInt(lWPop[j].getValue("posy").substring(5, 9));
+						int dx = thingX - x;
+						int dy = thingY - y;
+						if (Map.dist(dx, dy) < range) {
+							int orie = Integer.parseInt(lWPop[g].getValue("orie").substring(5, 9));
+							int lb = orie - cone;
+							int ub = orie + cone;
+							double angle = (Math.atan2(dy, dx) / Math.PI * 180);
+							if (angle < 0) {
+								angle += 360;
+							}
+							if (angle >= lb && angle <= ub) {
+								int seen = -1;
+								for (int k = 0; k < newThings.length; k++) {
+									if (newThings[k][0] == angle) {
+										seen = k;
+										break;
+									}
+								}
+								if (seen != -1) {
+									double[] ntemp = newThings[seen].clone();
+									newThings[seen] = new double[newThings[seen].length + 3];
+									System.arraycopy(ntemp, 0, newThings[seen], 0, ntemp.length);
+									newThings[seen][newThings[seen].length - 3] = thingX;
+									newThings[seen][newThings[seen].length - 2] = thingY;
+									newThings[seen][newThings[seen].length - 1] = Integer
+											.parseInt(lWPop[j].getValue("unid").substring(5));
+								} else {
+									double[][] ntemp = new double[newThings.length][];
+									for (int k = 0; k < ntemp.length; k++) {
+										ntemp[k] = new double[newThings[k].length];
+										System.arraycopy(newThings[k], 0, ntemp[k], 0, newThings[k].length);
+									}
+									newThings = new double[newThings.length + 1][];
+									for (int k = 0; k < ntemp.length; k++) {
+										newThings[k] = new double[ntemp[k].length];
+										System.arraycopy(ntemp[k], 0, newThings[k], 0, ntemp[k].length);
+									}
+									newThings[newThings.length - 1] = new double[4];
+									newThings[newThings.length - 1][0] = angle;
+									newThings[newThings.length - 1][1] = thingX;
+									newThings[newThings.length - 1][2] = thingY;
+									newThings[newThings.length - 1][3] = Integer
+											.parseInt(lWPop[j].getValue("unid").substring(5));
+								}
+
+								/*
+								 * double[] temp = angles.clone(); angles = new double[angles.length + 1];
+								 * System.arraycopy(temp, 0, angles, 0, temp.length); angles[angles.length - 1]
+								 * = angle; Thing[] ttemp = things.clone(); things = new Thing[things.length +
+								 * 1]; System.arraycopy(ttemp, 0, things, 0, ttemp.length); things[things.length
+								 * - 1] = lWPop[j];
+								 */
+							}
+						}
+					}
+
+					for (int j = 0; j < newThings.length; j++) {
 						int n = 0;
 						double cx = x;
 						double cy = y;
-						boolean collision = false;
-						while (n < range || !collision) {
-							for (int k = 0; k < lWPop.length; k++) {
-								int thingX = Integer.parseInt(lWPop[k].getValue("posx").substring(5, 9));
-								int thingY = Integer.parseInt(lWPop[k].getValue("posy").substring(5, 9));
-								if ((int) (Math.round(cx)) == thingX && (int) (Math.round(cy)) == thingY) {
-									collision = true;
-									lWPop[i].addTag("perc_seen_" + lWPop[k].getValue("unid").substring(5) + "_"
-											+ Map.generateNumberTag(thingX) + "_" + Map.generateNumberTag(thingY));
-									break;
+						double radianAngle = newThings[j][0] / 180 * Math.PI;
+						while (n < range) {
+							cx += Math.cos(radianAngle);
+							cy += Math.sin(radianAngle);
+							if (cx < 0)
+								break;
+							if (cx >= 25)
+								break;
+							if (cy < 0)
+								break;
+							if (cy >= 25)
+								break;
+							double maxHeight = -100;
+							if (table[(int) cx + (int) cy * 25] > maxHeight) {
+								maxHeight = table[(int) cx + (int) cy * 25];
+							}
+							for (int k = 1; k < newThings[j].length - 2; k += 3) {
+
+								int thingX = (int) (newThings[j][k]);
+								int thingY = (int) (newThings[j][k + 1]);
+								if (maxHeight > table[(int) thingX + (int) thingY * 25]) {
+									continue;
+								}
+								int dx = thingX - x;
+								int dy = thingY - y;
+								int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+										* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+								int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+										* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+								if ((int) cx == thingX && (int) cy == thingY) {
+									lWPop[g].addTag("perc_seen_" + Map.generateNumberTag((int) (newThings[j][k + 2]))
+											+ "_" + Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY));
 								}
 							}
-							cx += Math.sin(j * Math.PI / 180);
-							cy += Math.cos(j * Math.PI / 180);
 							n++;
+						}
+					}
+					/*
+					 * for (int j = 0; j < angles.length; j++) { int n = 0; double cx = x; double cy
+					 * = y; while (n < range) { cx += Math.cos(angles[j]); cy +=
+					 * Math.sin(angles[j]);
+					 * 
+					 * for (int k = 0; k < things.length; k++) { int thingX =
+					 * Integer.parseInt(things[k].getValue("posx").substring(5, 9)); int thingY =
+					 * Integer.parseInt(things[k].getValue("posy").substring(5, 9)); int dx = thingX
+					 * - x; int dy = thingY - y; int perX = (int) (thingX +
+					 * ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) Map.generateRandomRuntime() *
+					 * Map.dist(dx, dy) * (100 - reso) / 100.0); int perY = (int) (thingY +
+					 * ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) Map.generateRandomRuntime() *
+					 * Map.dist(dx, dy) * (100 - reso) / 100.0); if ((int) cx == thingX && (int) cy
+					 * == thingY) { lWPop[g].addTag("perc_seen_" +
+					 * lWPop[j].getValue("unid").substring(5) + "_" + Map.generateNumberTag(perX) +
+					 * "_" + Map.generateNumberTag(perY)); } } n++; } }
+					 */
+				}
+			}
+			if (lWPop[g].containsTag("feel")) {
+				String[] feelValues = lWPop[g].getAll("feel");
+				for (int i = 0; i < feelValues.length; i++) {
+					int range = Integer.parseInt(feelValues[i].substring(10, 14));
+					for (int j = 0; j < lWPop.length; j++) {
+						if (j == g)
+							continue;
+						int thingX = Integer.parseInt(lWPop[j].getValue("posx").substring(5, 9));
+						int thingY = Integer.parseInt(lWPop[j].getValue("posy").substring(5, 9));
+						int dx = thingX - x;
+						int dy = thingY - y;
+						if (Map.dist(dx, dy) < range) {
+
+							lWPop[g].addTag("perc_felt_" + lWPop[j].getValue("unid").substring(5) + "_"
+									+ Map.generateNumberTag(thingX) + "_" + Map.generateNumberTag(thingY));
+
 						}
 					}
 				}
 			}
-			if (lWPop[l].containsTag("feel")) {
-				
+			if (lWPop[g].containsTag("nose")) {
+				String[] noseValues = lWPop[g].getAll("nose");
+				for (int i = 0; i < noseValues.length; i++) {
+					int range = Integer.parseInt(noseValues[i].substring(10, 14));
+					int reso = Integer.parseInt(noseValues[i].substring(20, 24));
+					for (int j = 0; j < lWPop.length; j++) {
+						if (j == g)
+							continue;
+						int thingX = Integer.parseInt(lWPop[j].getValue("posx").substring(5, 9));
+						int thingY = Integer.parseInt(lWPop[j].getValue("posy").substring(5, 9));
+						int dx = thingX - x;
+						int dy = thingY - y;
+						if (Map.dist(dx, dy) < range) {
+							int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+									* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+							int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+									* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+							if (Map.checkLOS()) {
+								lWPop[g].addTag("perc_smlt_" + lWPop[j].getValue("unid").substring(5) + "_"
+										+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY));
+							}
+						}
+					}
+				}
 			}
-			if (lWPop[l].containsTag("ears")) {
-
+			if (lWPop[g].containsTag("ears")) {
+				String[] earValues = lWPop[g].getAll("ears");
+				for (int i = 0; i < earValues.length; i++) {
+					int range = Integer.parseInt(earValues[i].substring(10, 14));
+					int reso = Integer.parseInt(earValues[i].substring(20, 24));
+					for (int j = 0; j < lWPop.length; j++) {
+						if (j == g)
+							continue;
+						int thingX = Integer.parseInt(lWPop[j].getValue("posx").substring(5, 9));
+						int thingY = Integer.parseInt(lWPop[j].getValue("posy").substring(5, 9));
+						int dx = thingX - x;
+						int dy = thingY - y;
+						if (Map.dist(dx, dy) < range) {
+							int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+									* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+							int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+									* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+							if (Map.checkLOS()) {
+								lWPop[g].addTag("perc_eard_" + lWPop[j].getValue("unid").substring(5) + "_"
+										+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY));
+							}
+						}
+					}
+				}
 			}
-			if (lWPop[l].containsTag("nose")) {
+		}
+	}
 
+	public static void generateDetailedSensory() {
+		for (int g = 0; g < lWPop.length; g++) {
+			int percNum = lWPop[g].getAll("perc").length;
+			while(lWPop[g].containsTag("perc")) {
+				lWPop[g].remTag("perc");
+			}
+
+			int x = Integer.parseInt(lWPop[g].getValue("posx").substring(5, 9));
+			int y = Integer.parseInt(lWPop[g].getValue("posy").substring(5, 9));
+			double z = table[x + y * 25];
+			if (lWPop[g].containsTag("eyes")) {
+				String[] eyeValues = lWPop[g].getAll("eyes");
+				for (int i = 0; i < eyeValues.length; i++) {
+					int range = Integer.parseInt(eyeValues[i].substring(10, 14));
+					int reso = Integer.parseInt(eyeValues[i].substring(20, 24));
+					int cone = Integer.parseInt(eyeValues[i].substring(30, 34));
+					// double[] angles = new double[0];
+					double[][] newThings = new double[0][0];
+					// Thing[] things = new Thing[0];
+					for (int j = 0; j < lWPop.length; j++) {
+						if (j == g)
+							continue;
+						int thingX = Integer.parseInt(lWPop[j].getValue("posx").substring(5, 9));
+						int thingY = Integer.parseInt(lWPop[j].getValue("posy").substring(5, 9));
+						int dx = thingX - x;
+						int dy = thingY - y;
+						if (Map.dist(dx, dy) < range) {
+							int orie = Integer.parseInt(lWPop[g].getValue("orie").substring(5, 9));
+							int lb = orie - cone;
+							int ub = orie + cone;
+							double angle = (Math.atan2(dy, dx) / Math.PI * 180);
+							if (angle < 0) {
+								angle += 360;
+							}
+							if (angle >= lb && angle <= ub) {
+								int seen = -1;
+								for (int k = 0; k < newThings.length; k++) {
+									if (newThings[k][0] == angle) {
+										seen = k;
+										break;
+									}
+								}
+								if (seen != -1) {
+									double[] ntemp = newThings[seen].clone();
+									newThings[seen] = new double[newThings[seen].length + 3];
+									System.arraycopy(ntemp, 0, newThings[seen], 0, ntemp.length);
+									newThings[seen][newThings[seen].length - 3] = thingX;
+									newThings[seen][newThings[seen].length - 2] = thingY;
+									newThings[seen][newThings[seen].length - 1] = Integer
+											.parseInt(lWPop[j].getValue("unid").substring(5));
+								} else {
+									double[][] ntemp = new double[newThings.length][];
+									for (int k = 0; k < ntemp.length; k++) {
+										ntemp[k] = new double[newThings[k].length];
+										System.arraycopy(newThings[k], 0, ntemp[k], 0, newThings[k].length);
+									}
+									newThings = new double[newThings.length + 1][];
+									for (int k = 0; k < ntemp.length; k++) {
+										newThings[k] = new double[ntemp[k].length];
+										System.arraycopy(ntemp[k], 0, newThings[k], 0, ntemp[k].length);
+									}
+									newThings[newThings.length - 1] = new double[4];
+									newThings[newThings.length - 1][0] = angle;
+									newThings[newThings.length - 1][1] = thingX;
+									newThings[newThings.length - 1][2] = thingY;
+									newThings[newThings.length - 1][3] = Integer
+											.parseInt(lWPop[j].getValue("unid").substring(5));
+								}
+
+								/*
+								 * double[] temp = angles.clone(); angles = new double[angles.length + 1];
+								 * System.arraycopy(temp, 0, angles, 0, temp.length); angles[angles.length - 1]
+								 * = angle; Thing[] ttemp = things.clone(); things = new Thing[things.length +
+								 * 1]; System.arraycopy(ttemp, 0, things, 0, ttemp.length); things[things.length
+								 * - 1] = lWPop[j];
+								 */
+							}
+						}
+					}
+
+					for (int j = 0; j < newThings.length; j++) {
+						int n = 0;
+						double cx = x;
+						double cy = y;
+						double radianAngle = newThings[j][0] / 180 * Math.PI;
+						while (n < range) {
+							cx += Math.cos(radianAngle);
+							cy += Math.sin(radianAngle);
+							if (cx < 0)
+								break;
+							if (cx >= 25)
+								break;
+							if (cy < 0)
+								break;
+							if (cy >= 25)
+								break;
+							double maxHeight = -100;
+							if (table[(int) cx + (int) cy * 25] > maxHeight) {
+								maxHeight = table[(int) cx + (int) cy * 25];
+							}
+							for (int k = 1; k < newThings[j].length - 2; k += 3) {
+
+								int thingX = (int) (newThings[j][k]);
+								int thingY = (int) (newThings[j][k + 1]);
+								if (maxHeight > table[(int) thingX + (int) thingY * 25]) {
+									continue;
+								}
+								int dx = thingX - x;
+								int dy = thingY - y;
+								int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+										* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+								int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+										* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+								if ((int) cx == thingX && (int) cy == thingY) {
+									lWPop[g].addTag("perc_seen_" + Map.generateNumberTag((int) (newThings[j][k + 2]))
+											+ "_" + Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY));
+								}
+							}
+							n++;
+						}
+					}
+					/*
+					 * for (int j = 0; j < angles.length; j++) { int n = 0; double cx = x; double cy
+					 * = y; while (n < range) { cx += Math.cos(angles[j]); cy +=
+					 * Math.sin(angles[j]);
+					 * 
+					 * for (int k = 0; k < things.length; k++) { int thingX =
+					 * Integer.parseInt(things[k].getValue("posx").substring(5, 9)); int thingY =
+					 * Integer.parseInt(things[k].getValue("posy").substring(5, 9)); int dx = thingX
+					 * - x; int dy = thingY - y; int perX = (int) (thingX +
+					 * ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) Map.generateRandomRuntime() *
+					 * Map.dist(dx, dy) * (100 - reso) / 100.0); int perY = (int) (thingY +
+					 * ((Map.generateRandomRuntime() > 0.5) ? -1 : 1) Map.generateRandomRuntime() *
+					 * Map.dist(dx, dy) * (100 - reso) / 100.0); if ((int) cx == thingX && (int) cy
+					 * == thingY) { lWPop[g].addTag("perc_seen_" +
+					 * lWPop[j].getValue("unid").substring(5) + "_" + Map.generateNumberTag(perX) +
+					 * "_" + Map.generateNumberTag(perY)); } } n++; } }
+					 */
+				}
+			}
+			if (lWPop[g].containsTag("feel")) {
+				String[] feelValues = lWPop[g].getAll("feel");
+				for (int i = 0; i < feelValues.length; i++) {
+					int range = Integer.parseInt(feelValues[i].substring(10, 14));
+					for (int j = 0; j < lWPop.length; j++) {
+						if (j == g)
+							continue;
+						int thingX = Integer.parseInt(lWPop[j].getValue("posx").substring(5, 9));
+						int thingY = Integer.parseInt(lWPop[j].getValue("posy").substring(5, 9));
+						int dx = thingX - x;
+						int dy = thingY - y;
+						if (Map.dist(dx, dy) < range) {
+
+							lWPop[g].addTag("perc_felt_" + lWPop[j].getValue("unid").substring(5) + "_"
+									+ Map.generateNumberTag(thingX) + "_" + Map.generateNumberTag(thingY));
+
+						}
+					}
+				}
+			}
+			if (lWPop[g].containsTag("nose")) {
+				String[] noseValues = lWPop[g].getAll("nose");
+				for (int i = 0; i < noseValues.length; i++) {
+					int range = Integer.parseInt(noseValues[i].substring(10, 14));
+					int reso = Integer.parseInt(noseValues[i].substring(20, 24));
+					for (int j = 0; j < lWPop.length; j++) {
+						if (j == g)
+							continue;
+						int thingX = Integer.parseInt(lWPop[j].getValue("posx").substring(5, 9));
+						int thingY = Integer.parseInt(lWPop[j].getValue("posy").substring(5, 9));
+						int dx = thingX - x;
+						int dy = thingY - y;
+						if (Map.dist(dx, dy) < range) {
+							int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+									* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+							int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+									* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+							if (Map.checkLOS()) {
+								lWPop[g].addTag("perc_smlt_" + lWPop[j].getValue("unid").substring(5) + "_"
+										+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY));
+							}
+						}
+					}
+				}
+			}
+			if (lWPop[g].containsTag("ears")) {
+				String[] earValues = lWPop[g].getAll("ears");
+				for (int i = 0; i < earValues.length; i++) {
+					int range = Integer.parseInt(earValues[i].substring(10, 14));
+					int reso = Integer.parseInt(earValues[i].substring(20, 24));
+					for (int j = 0; j < lWPop.length; j++) {
+						if (j == g)
+							continue;
+						int thingX = Integer.parseInt(lWPop[j].getValue("posx").substring(5, 9));
+						int thingY = Integer.parseInt(lWPop[j].getValue("posy").substring(5, 9));
+						int dx = thingX - x;
+						int dy = thingY - y;
+						if (Map.dist(dx, dy) < range) {
+							int perX = (int) (thingX + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+									* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+							int perY = (int) (thingY + ((Map.generateRandomRuntime() > 0.5) ? -1 : 1)
+									* Map.generateRandomRuntime() * Map.dist(dx, dy) * (100 - reso) / 100.0);
+							if (Map.checkLOS()) {
+								lWPop[g].addTag("perc_eard_" + lWPop[j].getValue("unid").substring(5) + "_"
+										+ Map.generateNumberTag(perX) + "_" + Map.generateNumberTag(perY));
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -902,19 +1457,7 @@ public class Map {
 			table[i] /= (tMax - tMin);
 		}
 
-		/*
-		 * Thing thing = new Thing(); thing.addTag("0"); thing.addTag("1");
-		 * thing.addTag("2"); thing.addTag("3"); thing.addTag("4"); thing.addTag("5");
-		 * thing.addTag("6"); thing.addTag("7"); thing.addTag("8"); thing.addTag("9");
-		 * thing.addTag("10"); thing.addTag("11"); thing.addTag("12");
-		 * thing.addTag("13"); thing.addTag("14"); thing.addTag("15");
-		 * thing.addTag("16"); thing.addTag("17"); thing.addTag("18");
-		 * thing.addTag("19"); thing.addTag("20"); thing.addTag("21");
-		 * thing.addTag("22"); thing.addTag("23"); thing.addTag("24");
-		 * thing.addTag("25"); thing.addTag("26"); thing.addTag("27");
-		 * thing.addTag("28"); thing.addTag("29"); thing.printTree();
-		 * thing.remTagTest("3"); thing.printTree();
-		 */
+		
 		worldSize = (int) (generateRandomRuntime() * 15) + 1;
 		biomeConstants = new double[worldSize][5];
 		biomeSect = new Thing[worldSize];
