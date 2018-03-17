@@ -1,5 +1,7 @@
 package ascii;
 
+import java.lang.reflect.Array;
+
 public class Map {
 	private static double[] table = new double[25 * 25];
 	private char[] baseMap = new char[25 * 25];
@@ -71,8 +73,8 @@ public class Map {
 	public static String[] matTraitsTL = { "roug", "stic", "shin", "toxi", "bnce", "elas", "brit", "tran", "heat",
 			"nrgy" };
 
-	public static String[] anatomyTL = { "exos", "eyes", "furr", "scal", "leaf", "hand", "foot", "claw", "mout", "head",
-			"tail", "tent", "japp", "horn", "gill", "tetl", "tetn", "ears", "nose", "feel" };
+	public static String[] anatomyTL = { "exos", "eyes", "furr", "scal", "leaf", "mout", "head", "tail", "tent", "japp",
+			"horn", "gill", "tetl", "tetn", "ears", "nose", "feel" };
 	public static String[] specialTL = { "proj", "spin", "spit", "acid", "stic", "pois", "spik", "slip", "sgmt" };
 	public static String[] anatomyPTL = { "vine", "leaf", "thor", "bark", "bran", "spin", "gill", "capp", "frui",
 			"flwr", "aloe", "stem", "mvmt" };
@@ -84,19 +86,27 @@ public class Map {
 												// pkht is
 	// packhunting, terr is territorial
 
-	// traits
-	public static String[] mindTL = { "reas", "tool", "algn", "pers", "tele", "psio" }; // arranged from least int req
-	// to most int req, this
-	// tagList holds all tags
-	// that require significant
-	// intelligence to have
+	// new behavioural tags
+	// habitat level shelter seeking behavior
+	public static String[] shelterTL = { "nbld", "nstl", "cave", "flra", "grnd", "undr" };
+	// social interaction level behavior
+	public static String[] socialTL = { "usoc", "faml", "herd", "lone" };
+	// social unit level environmental interaction
+	public static String[] terrTL = { "terr", "noma", "migr" };
+	// terr - territorial behavior, tied down to one place
+	// noma - wandering, variable habitat
+	// migr - migratory
+	// food specific behavior
+	public static String[] foodTL = { "pkht", "lone", "ambu" };
+	// pkht - packhunting
+	// lone - hunting is done solo
+	// ambu - hunting is done in ambush
+	// courtship behavior - should also specify if mdom, fdom, or edom
+	public static String[] courtTL = { "fght", "fcfs", "sing", "deco", "danc", "pcoc", "cons" };
+	// fcfs - first come first serve
+	// pcoc - based on looks (like a peacock)
+	// cons - consent, based on choice of both
 
-	public static String[] featsTL = { "bers", "resi", "pigh", "mite" }; // arranged from least str req to most str req,
-																			// this tagList holds all tags
-	// that require significant strength to have
-	public static String[] phaseTL = { "rflx" }; // arranged from least spd req to most spd req, this tagList holds all
-													// tags
-	// that require significant speed to have
 	public static String[] qualitModTL = { "very", "nott", "nmod" };
 	public static String[] reactionTL = { "heat", "lite", "nrgy", "touc" };
 
@@ -242,34 +252,126 @@ public class Map {
 
 	public static void generateBehavior() {
 		for (int i = 0; i < lWPop.length; i++) {
+			int speed = 1;
 			if (lWPop[i].containsTag("pnic")) {
-				String[] threats = lWPop[i].getAll("thrt");
-				// take weighted average of threat positions
-				for (int j = 0; j < threats.length; j++) {
-
+				lWPop[i].remTag("pnic");
+			}
+			if (lWPop[i].containsTag("sdef")) {
+				lWPop[i].remTag("sdef");
+			}
+			String[] threats = lWPop[i].getAll("thrt");
+			int aggroDist = (int) (10 * (Integer.parseInt(lWPop[i].getValue("agdm").substring(5, 9))) / 100.0);
+			int x = Integer.parseInt(lWPop[i].getValue("posx").substring(5, 9));
+			int y = Integer.parseInt(lWPop[i].getValue("posy").substring(5, 9));
+			for (int j = 0; j < threats.length; j++) {
+				Thing threat = getByID(threats[j].substring(5, 9));
+				int tx = Integer.parseInt(threat.getValue("posx").substring(5, 9));
+				int ty = Integer.parseInt(threat.getValue("posy").substring(5, 9));
+				int threatDist = dist(x - tx, y - ty);
+				if (threatDist <= aggroDist) {
+					if (generateRandomRuntime() < (Integer.parseInt(lWPop[i].getValue("agrm").substring(5, 9)))
+							/ 100.0) {
+						lWPop[i].addTag("sdef");
+						break;
+					} else {
+						lWPop[i].addTag("pnic");
+						break;
+					}
 				}
+
+			}
+			if (lWPop[i].containsTag("sdef")) {
+				int minIndex = -1;
+				int minDist = 1000000;
+				for (int j = 0; j < threats.length; j++) {
+					Thing threat = getByID(threats[j].substring(5, 9));
+					int tx = Integer.parseInt(threat.getValue("posx").substring(5, 9));
+					int ty = Integer.parseInt(threat.getValue("posy").substring(5, 9));
+					int tDist = dist(x - tx, y - ty);
+					if (minDist > tDist) {
+						minDist = tDist;
+						minIndex = j;
+					}
+				}
+				if (minIndex != -1) {
+					lWPop[i].addTag("cmbt_" + threats[minIndex]);
+					continue;
+				}
+			}
+			if (lWPop[i].containsTag("pnic")) {
+				// take weighted average of threat positions
+				int totalDist = 0;
+				int[] tXs = new int[threats.length];
+				int[] tYs = new int[threats.length];
+				int[] tDs = new int[threats.length];
+				for (int j = 0; j < threats.length; j++) {
+					Thing threat = getByID(threats[j].substring(5, 9));
+					int tx = Integer.parseInt(threat.getValue("posx").substring(5, 9));
+					int ty = Integer.parseInt(threat.getValue("posy").substring(5, 9));
+					int threatDist = dist(x - tx, y - ty);
+					tXs[j] = tx;
+					tYs[j] = ty;
+					tDs[j] = threatDist;
+					totalDist += threatDist;
+				}
+				int avgx = 0;
+				int avgy = 0;
+				for (int j = 0; j < threats.length; j++) {
+					int tx = tXs[j];
+					int ty = tYs[j];
+					int threatDist = tDs[j];
+					avgx += (int) (tx * (totalDist - threatDist) / (double) (totalDist));
+					avgy += (int) (ty * (totalDist - threatDist) / (double) (totalDist));
+				}
+				double flightMod = (Integer.parseInt(lWPop[i].getValue("fldm").substring(5, 9))) / 100.0;
+				double angle = Math.atan2(y - avgy, x - avgx);
+				int moveX = (int) (5 * flightMod * Math.cos(angle));
+				int moveY = (int) (5 * flightMod * Math.sin(angle));
+				lWPop[i].addTag("move_" + generateNumberTag(moveX) + "_" + generateNumberTag(moveY));
+				continue;
 			}
 			if (lWPop[i].containsTag("hngr")) {
 				String[] preyItems = lWPop[i].getAll("prey");
 				int minIndex = -1;
 				int minDist = 1000000;
-				int x = Integer.parseInt(lWPop[i].getValue("posx").substring(5));
-				int y = Integer.parseInt(lWPop[i].getValue("posy").substring(5));
 				for (int j = 0; j < preyItems.length; j++) {
-					int dx = Integer.parseInt(lWPop[j].getValue("posx").substring(5)) - x;
-					int dy = Integer.parseInt(lWPop[j].getValue("posy").substring(5)) - y;
-					if (dist(dx, dy) < minDist) {
-						minDist = dist(dx, dy);
-						minIndex = j;
+					Thing prey = getByID(preyItems[j].substring(5, 9));
+					if (prey != null) {
+						int dx = Integer.parseInt(prey.getValue("posx").substring(5)) - x;
+						int dy = Integer.parseInt(prey.getValue("posy").substring(5)) - y;
+						if (dist(dx, dy) < minDist) {
+							minDist = dist(dx, dy);
+							minIndex = j;
+						}
 					}
 				}
+
 				// if prey is found
 				if (minIndex != -1) {
-
+					// avoid line of sight?
+					// approach from favorable angle
+					Thing prey = getByID(preyItems[minIndex].substring(5, 9));
+					int px = Integer.parseInt(prey.getValue("posx").substring(5));
+					int py = Integer.parseInt(prey.getValue("posy").substring(5));
+					double angle = Math.atan2(y - py, x - px);
+					int moveX = (int) (speed * Math.cos(angle));
+					int moveY = (int) (speed * Math.sin(angle));
+					lWPop[i].addTag("move_" + generateNumberTag(moveX) + "_" + generateNumberTag(moveY));
+					continue;
 				} else {
+					// wander until prey is found
 
+					int randX = (generateRandomRuntime() > 0.5) ? -1 : 1 * speed;
+					int randY = (generateRandomRuntime() > 0.5) ? -1 : 1 * speed;
+					lWPop[i].addTag("move_" + generateNumberTag(randX) + "_" + generateNumberTag(randY));
+					continue;
 				}
 			}
+			// idle
+			int randX = (generateRandomRuntime() > 0.5) ? -1 : 1 * speed;
+			int randY = (generateRandomRuntime() > 0.5) ? -1 : 1 * speed;
+			lWPop[i].addTag("move_" + generateNumberTag(randX) + "_" + generateNumberTag(randY));
+			continue;
 		}
 	}
 
@@ -295,13 +397,13 @@ public class Map {
 			}
 			if (localWildlife[i].containsTag("anim")) {
 				String[] behaviorArr = localWildlife[i].getAll("bhvr");
-				tempPop = (5 - size) * (4 - eco);
+				tempPop = (5 - size) * (4 - eco) + ((int) (3 * generateRandomRuntime()));
 				for (int j = 0; j < behaviorArr.length; j++) {
 					String behavior = behaviorArr[j].substring(5);
 
 					distMod = 5;
 					if (behavior.equals("pkht")) {
-						tempPop += 4;
+						tempPop += 4 + ((int) (3 * generateRandomRuntime()));
 
 					}
 					if (behavior.equals("noma")) {
@@ -321,11 +423,11 @@ public class Map {
 
 					}
 					if (behavior.equals("faml")) {
-						tempPop += 4;
+						tempPop += 4 + ((int) (3 * generateRandomRuntime()));
 						distMod -= 2;
 
 					}
-					if (behavior.equals("farm")) {
+					if (behavior.equals("usoc")) {
 						tempPop *= 2;
 						distMod -= 2;
 
@@ -463,12 +565,15 @@ public class Map {
 	}
 
 	public double bodyLengthSpline(double a, double b, double x) {
-		return hermiteTangentOne(x) * a + hermiteTangentTwo(x) * b + 0.5 * (1 - 4 * (x - 0.5) * (x - 0.5));
-	} // -2<=a<=2 and -2<=b<=2 and 0<=x<=1
+		double modA = a * 4 - 2;
+		double modB = a * 4 - 2;
+		return hermiteTangentOne(x) * modA + hermiteTangentTwo(x) * modB + 0.5 * (1 - 4 * (x - 0.5) * (x - 0.5));
+	} // -2<=a<=2 and -2<=b<=2 and 0<=x<=1 where x is distance from head
 
 	public double bodyQuarterSpline(double a, double x) {
-		return (1 - x) * (1 - x) * (1 - x) + (1 - x) * (1 - x) * x * a + (1 - x) * x * x * a;
-	} // 0<=a<=3 and 0<=x<=1
+		double modA = a * 3;
+		return (1 - x) * (1 - x) * (1 - x) + (1 - x) * (1 - x) * x * modA + (1 - x) * x * x * modA;
+	} // 0<=a<=3 and 0<=x<=1 where x is distance from spine
 
 	// DSQ-algorithm here
 	private void diamondSquare() {
@@ -582,9 +687,21 @@ public class Map {
 			if (lWPop[i].containsTag("move")) {
 				int x = Integer.parseInt(lWPop[i].getValue("posx").substring(5));
 				int y = Integer.parseInt(lWPop[i].getValue("posy").substring(5));
+
 				x += Integer.parseInt(lWPop[i].getValue("move").substring(5, 9));
 				y += Integer.parseInt(lWPop[i].getValue("move").substring(10));
-
+				if (x < 0) {
+					x = 0;
+				}
+				if (x >= 25) {
+					x = 24;
+				}
+				if (y < 0) {
+					y = 0;
+				}
+				if (y >= 25) {
+					y = 24;
+				}
 				lWPop[i].remTag("posx");
 				lWPop[i].remTag("posy");
 				lWPop[i].remTag("move");
@@ -592,20 +709,6 @@ public class Map {
 				lWPop[i].addTag("posx_" + Map.generateNumberTag(x));
 				lWPop[i].addTag("posy_" + Map.generateNumberTag(y));
 			}
-			// testing movement
-			// delete this section once actual AI is set up
-			if (lWPop[i].containsTag("anim")) {
-				int randX = (Map.generateRandomRuntime() > 0.5) ? 1 : -1;
-				int randY = (Map.generateRandomRuntime() > 0.5) ? 1 : -1;
-				int x = Integer.parseInt(lWPop[i].getValue("posx").substring(5));
-				int y = Integer.parseInt(lWPop[i].getValue("posy").substring(5));
-				if (randX + x >= 25 || randX + x < 0)
-					randX *= -1;
-				if (randY + y >= 25 || randY + y < 0)
-					randY *= -1;
-				lWPop[i].addTag("move_" + Map.generateNumberTag(randX) + "_" + Map.generateNumberTag(randY));
-			}
-			// end of testing movement
 			if (lWPop[i].containsTag("anim")) {
 				if (lWPop[i].containsTag("anim_indv")) {
 					if (lWPop[i].containsTag("hngr")) {
@@ -636,6 +739,7 @@ public class Map {
 	public static void updateCreatures() {
 		generateDetailedSensory();
 		generatePreyItems();
+		generateBehavior();
 		readAndUpdate();
 	}
 
@@ -651,7 +755,7 @@ public class Map {
 				int size = Integer.parseInt(lWPop[i].getValue("size").substring(5));
 				int thingEcol = Integer.parseInt(lWPop[i].getValue("ecol").substring(5));
 				int ecol = Integer.parseInt(lWPop[i].getValue("ecol").substring(5));
-				double fearMod = Integer.parseInt(lWPop[i].getValue("fear").substring(5)) / 100.0;
+				double fearMod = Integer.parseInt(lWPop[i].getValue("flim").substring(5)) / 100.0;
 				if (thing.getValue("spec").equals(lWPop[j].getValue("spec"))) {
 					if (lWPop[i].containsTag("cnbl") && thingSize * fearMod >= size) {
 						lWPop[i].addTag("thrt_" + percValues[j].substring(10, 14));
@@ -753,7 +857,7 @@ public class Map {
 					int intMod = Integer.parseInt(lWPop[j].getValue("intm").substring(5));
 					int tStrMod = Integer.parseInt(thing.getValue("strm").substring(5));
 					int tSpdMod = Integer.parseInt(thing.getValue("spdm").substring(5));
-					double aptitude = Integer.parseInt(thing.getValue("aptt").substring(5)) / 100.0;
+					double aptitude = Integer.parseInt(thing.getValue("figm").substring(5)) / 100.0;
 
 					int sizeMod = 1;
 					if (!thing.getValue("spec").equals(lWPop[j].getValue("spec")) || lWPop[j].containsTag("cnbl")) {
@@ -792,7 +896,7 @@ public class Map {
 							int intMod = Integer.parseInt(lWPop[j].getValue("intm").substring(5));
 							int tStrMod = Integer.parseInt(thing.getValue("strm").substring(5));
 							int tSpdMod = Integer.parseInt(thing.getValue("spdm").substring(5));
-							double aptitude = Integer.parseInt(thing.getValue("aptt").substring(5)) / 100.0;
+							double aptitude = Integer.parseInt(thing.getValue("figm").substring(5)) / 100.0;
 							int sizeMod = 1;
 
 							if (lWPop[j].containsTag("pkht")) {
@@ -886,12 +990,29 @@ public class Map {
 			animalTL[i].addTag("skel_" + skelMaterial);
 			animalTL[i].addTag("flsh_" + flshMaterial);
 
+			// body length spline variables
+			animalTL[i].addTag("blva_" + generateNumberTag((int) (generateRandomRuntime() * 10000)));
+			animalTL[i].addTag("blvb_" + generateNumberTag((int) (generateRandomRuntime() * 10000)));
+			// body quarter spline variable
+			animalTL[i].addTag("blqa_" + generateNumberTag((int) (generateRandomRuntime() * 10000)));
+
 			animalTL[i].addTag("habi_" + generateNumberTag((int) (generateRandomRuntime() * biomeSect.length)));
 			animalTL[i].addTag("strm_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
 			animalTL[i].addTag("intm_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
 			animalTL[i].addTag("spdm_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
-			animalTL[i].addTag("fear_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
-			animalTL[i].addTag("aptt_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
+			// GLOBAL MENTAL VALUES
+			animalTL[i].addTag("flim_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
+			// determines tendency to decide whether or not a thing is a threat
+			animalTL[i].addTag("figm_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
+			// determines tendency to decide whether or not a thing is suitable prey
+			animalTL[i].addTag("fldm_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
+			// determines variation in flight distance
+			animalTL[i].addTag("agrm_" + generateNumberTag((int) (generateRandomRuntime() * 101)));
+			// determines tendency to fight threats/run from threats
+			animalTL[i].addTag("agdm_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
+			// determines variation in aggro distance
+
+			// flim and figm are the flight and fight tendencies respectively
 
 			int complexity = 5 + (int) (generateRandomRuntime() * 30);
 			animalTL[i].addTag("cplx_" + generateNumberTag(complexity));
@@ -905,53 +1026,48 @@ public class Map {
 				animalTL[i].addTag("size_" + generateNumberTag(sizeNum));
 				animalTL[i].addTag("ecol_" + generateNumberTag((int) (generateRandomRuntime() * 4)));
 				animalTL[i].addTag("stam_" + generateNumberTag((int) (generateRandomRuntime() * 201)));
-				for (int j = 0; j < complexity / 5 + 1; j++) {
-					String prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
-					while (prereqCheck.equals("pkht") && animalTL[i].containsTag("lone")) {
-						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
+				for (int j = 0; j < 5; j++) {
+					// new behavioural tags
+					// shelterTL = {"nbld", "nstl", "cave", "flra", "grnd", "undr"};
+					// socialTL = {"usoc", "faml", "herd", "lone"};
+					// terrTL = {"terr", "noma", "migr"};
+					// foodTL = {"pkht", "lone", "ambu"};
+					// courtTL = {"fght", "fcfs", "sing", "deco", "danc", "pcoc", "cons"};
+					String[] tagList = null;
+					switch (j) {
+					case 0:
+						tagList = shelterTL;
+						break;
+					case 1:
+						tagList = socialTL;
+						break;
+					case 2:
+						tagList = terrTL;
+						break;
+					case 3:
+						tagList = foodTL;
+						break;
+					case 4:
+						tagList = courtTL;
+						break;
+					default:
+						break;
 					}
-					while (prereqCheck.equals("faml") && animalTL[i].containsTag("lone")) {
-						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
+					String prereq = tagList[(int) (generateRandomRuntime() * tagList.length)];
+					if (prereq.equals("nbld")) {
+						int matIndex = (int) (generateRandomRuntime() * materialTL.length);
+						prereq += "_" + generateNumberTag(matIndex);
 					}
-					while (prereqCheck.equals("usoc") && animalTL[i].containsTag("lone")) {
-						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
-					}
-					while (prereqCheck.equals("lone") && animalTL[i].containsTag("pkht")) {
-						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
-					}
-					while (prereqCheck.equals("lone") && animalTL[i].containsTag("faml")) {
-						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
-					}
-					while (prereqCheck.equals("lone") && animalTL[i].containsTag("usoc")) {
-						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
-					}
-					while (prereqCheck.equals("cnbl") && animalTL[i].containsTag("usoc")) {
-						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
-					}
-					while (prereqCheck.equals("usoc") && animalTL[i].containsTag("cnbl")) {
-						prereqCheck = behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)];
-					}
-					animalTL[i].addTag("bhvr_" + behaviorTL[(int) (generateRandomRuntime() * behaviorTL.length)] + "_"
-							+ generateQualityModTag());
+					animalTL[i].addTag("bhvr_" + prereq + "_" + generateQualityModTag());
+				}
+				if (generateRandomRuntime() < 0.02) {
+					animalTL[i].addTag("bhvr_cnbl_" + generateQualityModTag());
 				}
 				// need to contextualize - placement - shape - symmetry
 				for (int j = 0; j < complexity; j++) {
 					int anatomyNum = ((int) (generateRandomQuintic() * (10 * 15.0 / (complexity + sizeNum))) + 1);
 
 					String prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
-
-					while ((prereqCheck.equals("hand") || prereqCheck.equals("foot"))
-							&& (animalTL[i].getAll("hand").length
-									+ animalTL[i].getAll("foot").length >= animalTL[i].getAll("japp").length
-											+ animalTL[i].getAll("tent").length + animalTL[i].getAll("tail").length)) {
-						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
-					}
-
-					while (prereqCheck.equals("claw")
-							&& (animalTL[i].getAll("claw").length >= animalTL[i].getAll("hand").length
-									+ animalTL[i].getAll("foot").length)) {
-						prereqCheck = anatomyTL[(int) (generateRandomRuntime() * anatomyTL.length)];
-					}
 
 					while ((prereqCheck.equals("tetn") || prereqCheck.equals("tetl"))
 							&& !animalTL[i].containsTag("mout")) {
@@ -999,7 +1115,36 @@ public class Map {
 						prereqCheck += "_rnge_" + generateNumberTag((feelRange));
 						prereqCheck += "_reso_" + generateNumberTag(100);
 					}
+					if (prereqCheck.equals("japp")) {
+						if (generateRandomRuntime() > 0.5) {
+							if (generateRandomRuntime() > 0.8) {
+								prereqCheck += "_hand";
+							} else {
+								prereqCheck += "_claw";
+							}
+						} else {
+							if (generateRandomRuntime() > 0.8) {
+								prereqCheck += "_hook";
+							} else {
+								prereqCheck += "_hoof";
+							}
+						}
+					}
+					if (prereqCheck.equals("tent") && generateRandomRuntime() > 0.8) {
+						if (generateRandomRuntime() > 0.5) {
+							if (generateRandomRuntime() > 0.8) {
+								prereqCheck += "_hand";
+							} else {
+								prereqCheck += "_claw";
+							}
+						} else {
+							prereqCheck += "_hoof";
+						}
+					}
 					prereqCheck += "_" + generateNumberTag(anatomyNum) + "_"
+							+ generateNumberTag((int) (generateRandomRuntime() * 10000)) + "_"
+							+ generateNumberTag((int) (generateRandomRuntime() * 10000)) + "_"
+							+ generateNumberTag((int) (generateRandomRuntime() * 100)) + "_"
 							+ specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_"
 							+ generateQualityModTag();
 					animalTL[i].addTag(prereqCheck);
@@ -1014,17 +1159,40 @@ public class Map {
 				animalTL[i].addTag("size_" + generateNumberTag(sizeNum));
 				animalTL[i].addTag("ecol_" + generateNumberTag(((int) (generateRandomRuntime() * 11)) / 9));
 
+				animalTL[i].addTag("bqva_" + generateNumberTag((int) (generateRandomRuntime() * 10000)));
+
 				// need to contextualize - placement - shape - symmetry
 				for (int j = 0; j < complexity; j++) {
 					String prereqCheck = anatomyPTL[(int) (generateRandomRuntime() * anatomyPTL.length)] + "_"
 							+ generateQualityModTag();
-					prereqCheck += "_" + specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_"
+					prereqCheck += generateNumberTag((int) (generateRandomRuntime() * 10000)) + "_"
+							+ generateNumberTag((int) (generateRandomRuntime() * 100)) + "_"
+							+ specialTL[(int) (generateRandomRuntime() * specialTL.length)] + "_"
 							+ generateQualityModTag();
 					animalTL[i].addTag(prereqCheck);
 				}
 			}
-		}
 
+			// determine physicality
+			// anatomyTL = { "exos", "eyes", "furr", "scal", "leaf", "hand", "foot", "claw",
+			// "mout", "head",
+			// "tail", "tent", "japp", "horn", "gill", "tetl", "tetn", "ears", "nose",
+			// "feel" };
+			String[] jappArr = animalTL[i].getAll("japp");
+			String[] tentArr = animalTL[i].getAll("tent");
+			String[] limbValues = new String[jappArr.length + tentArr.length];
+			for (int j = 0; j < limbValues.length; j++) {
+				if (j < jappArr.length) {
+					limbValues[j] = jappArr[j];
+				} else {
+					if (jappArr.length != 0)
+						limbValues[j] = tentArr[j % jappArr.length];
+				}
+			}
+			// 000000000011111111112222222222333333333
+			// 012345678901234567890123456789012345678
+			// japp_hand_0014_9999_9999_0099_pois_very
+		}
 	}
 
 	public static void generateDetailedSensory() {
@@ -1042,6 +1210,7 @@ public class Map {
 					int range = Integer.parseInt(eyeValues[i].substring(10, 14));
 					int reso = Integer.parseInt(eyeValues[i].substring(20, 24));
 					int cone = Integer.parseInt(eyeValues[i].substring(30, 34));
+
 					double[][] newThings = new double[0][0];
 					for (int j = 0; j < lWPop.length; j++) {
 						if (j == g)
