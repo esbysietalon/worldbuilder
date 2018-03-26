@@ -9,7 +9,6 @@ public class Thing {
 	public Thing() {
 		newTL = new TagList();
 	}
-
 	public void olderAddTag(String tag) {
 		for (int i = 0; i < tagList.length; i++) {
 			if (tag.equals(tagList[i]))
